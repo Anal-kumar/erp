@@ -81,7 +81,7 @@
                   variant="outlined" density="compact" :error-messages="errors.pot_number"></v-text-field>
               </v-col>
             </v-row>
-            <div class="d-flex justify-center gap-4 mt-4">
+            <div class="d-flex justify-center ga-4 mt-4">
               <v-btn type="submit" color="primary" :loading="isSubmitting" :disabled="isSubmitting">
                 Update
               </v-btn>
@@ -98,18 +98,17 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
-import axios from 'axios';
 import { debounce } from 'lodash';
 import { useToast } from 'vue-toastification';
-import config from '@/config';
-
+import storage from '@/utils/storage';
+import { productionService, millService, firmDetailsService, getModuleStatus } from '@/services'
 const toast = useToast();
 
 const currentPage = ref(1);
 const selectedBatchId = ref(null);
 const showEditModal = ref(false);
 const batches = ref([]);
-const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+const user = storage.getToken();
 const isSubmitting = ref(false);
 const isLoading = ref(false);
 const firm = ref({ page_size: 10 });
@@ -178,14 +177,7 @@ const formatDate = (date) => {
 
 const fetchStockItems = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/stock_items_details/get_stock_items`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await millService.getStockItems();
     if (Array.isArray(response.data)) {
       stockItems.value = response.data;
     } else {
@@ -199,14 +191,7 @@ const fetchStockItems = async () => {
 
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await firmDetailsService.getFirmDetails();
     if (response.status === 200 && response.data) {
       firm.value = {
         firm_name: response.data.firm_name || 'Unknown Firm',
@@ -225,12 +210,7 @@ const fetchFirmDetails = async () => {
 const fetchBatches = async () => {
   isLoading.value = true;
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/batches/get_all_batches`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.getBatches();
     if (response.status === 200 && Array.isArray(response.data)) {
       batches.value = response.data;
     } else {
@@ -245,10 +225,10 @@ const fetchBatches = async () => {
 };
 
 const setUserLoginId = () => {
-  if (user?.id) {
-    editForm.user_login_id = parseInt(user.id, 10);
-  } else {
-    toast.error('User data not found. Please log in.');
+  const sessionUser = storage.getUser();
+  if (sessionUser) {
+    const user = sessionUser;
+    editForm.user_login_id = user.id;
   }
 };
 
@@ -261,10 +241,11 @@ const validateForm = () => {
 };
 
 const OpenEditModal = (batch) => {
-  if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
-    toast.error('Only admins can edit entries');
+  if (!user || user.role !== 'superadmin' && user.role !== 'admin') {
+    toast.error('Only superadmin and admin can edit entries');
     return;
   }
+
   showEditModal.value = true;
   selectedBatchId.value = batch.id;
   editForm.batch_name = batch.batch_name || '';
@@ -294,13 +275,7 @@ const updateBatch = async () => {
       stock_item_name: editForm.stock_item_name,
       user_login_id: editForm.user_login_id,
     };
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/batches/update_batch/${selectedBatchId.value}`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.updateBatch(selectedBatchId.value, payload);
     if (response.status === 200 || response.status === 201) {
       toast.success('Batch updated successfully!');
       resetForm();
@@ -341,7 +316,7 @@ const clearFilters = () => {
 };
 
 onMounted(() => {
-  const token = sessionStorage.getItem('token');
+  const token = storage.getToken();
   if (!token) {
     toast.error('No authentication token found. Please log in.');
     return;

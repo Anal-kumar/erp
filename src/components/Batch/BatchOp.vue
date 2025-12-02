@@ -20,7 +20,7 @@
               <v-checkbox v-model="form.is_active" label="Active" color="primary" density="compact"
                 hide-details></v-checkbox>
 
-              <div class="d-flex justify-center gap-2 mt-4">
+              <div class="d-flex justify-center ga-2 mt-4">
                 <v-btn type="submit" color="primary">
                   {{ isEditMode ? 'Update' : 'Add' }}
                 </v-btn>
@@ -63,8 +63,8 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import axios from 'axios';
-import config from '@/config';
+import storage from '@/utils/storage';
+import { productionService, firmDetailsService, getModuleStatus } from '@/services';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
@@ -73,7 +73,7 @@ const selectedOperatorId = ref(null);
 const isModuleEnabled = ref(false);
 const operators = ref([]);
 const firm = ref({ page_size: 10 });
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 
 const form = reactive({
   operator_name: '',
@@ -105,14 +105,7 @@ const validateForm = () => {
 
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await firmDetailsService.getFirmDetails();
 
     if (response.status === 200 && response.data) {
       firm.value = {
@@ -131,14 +124,7 @@ const fetchFirmDetails = async () => {
 
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await getModuleStatus();
     const modules = response.data;
     const BatchModule = modules.find((m) => m.module_name === 'batch_operations');
     if (!BatchModule) {
@@ -157,14 +143,7 @@ const fetchModuleStatus = async () => {
 
 const fetchOperators = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/batch_operators/get_operators`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await productionService.getBatchOperators();
     if (response.status === 200) {
       operators.value = response.data;
     }
@@ -187,15 +166,7 @@ const addOperator = async () => {
       operator_mob_no: form.operator_mob_no,
       is_active: form.is_active,
     };
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/batch_operators/create_operator`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await productionService.createBatchOperator(payload);
     if (response.status === 200 || response.status === 201) {
       toast.success('Operator added successfully!');
       form.operator_name = '';
@@ -232,15 +203,7 @@ const updateOperator = async () => {
       operator_mob_no: form.operator_mob_no,
       is_active: form.is_active,
     };
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/batch_operators/update_operator/${selectedOperatorId.value}`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await productionService.updateBatchOperator(selectedOperatorId.value, payload);
     if (response.status === 200 || response.status === 201) {
       toast.success('Operator updated successfully!');
       form.operator_name = '';

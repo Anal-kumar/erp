@@ -8,100 +8,100 @@ export default {
 
     // --- Brokers ---
     getBrokers() {
-        return apiClient.get('/master_data/get_broker_details')
+        return apiClient.get('/broker_details/get_broker_details')
     },
     addBroker(payload) {
-        return apiClient.post('/master_data/create_broker_details', payload)
+        return apiClient.post('/broker_details/create_broker_details', payload)
     },
     updateBroker(brokerId, payload) {
-        return apiClient.put(`/master_data/update_broker_details/${brokerId}`, payload)
+        return apiClient.put(`/broker_details/update_broker_details/${brokerId}`, payload)
     },
     deleteBroker(brokerId) {
-        return apiClient.delete(`/master_data/delete_broker_details/${brokerId}`)
+        return apiClient.delete(`/broker_details/delete_broker_details/${brokerId}`)
     },
 
     // --- Godowns ---
     getGodowns() {
-        return apiClient.get('/master_data/get_godown_details')
+        return apiClient.get('/godowns/get_godown_details')
     },
     addGodown(payload) {
-        return apiClient.post('/master_data/create_godown_details', payload)
+        return apiClient.post('/godowns/create_godown_details', payload)
     },
     updateGodown(godownId, payload) {
-        return apiClient.put(`/master_data/update_godown_details/${godownId}`, payload)
+        return apiClient.put(`/godowns/update_godown_details/${godownId}`, payload)
     },
     deleteGodown(godownId) {
-        return apiClient.delete(`/master_data/delete_godown_details/${godownId}`)
+        return apiClient.delete(`/godowns/delete_godown_details/${godownId}`)
     },
 
     // --- Packaging ---
     getPackagings() {
-        return apiClient.get('/master_data/get_packaging_details')
+        return apiClient.get('/packagings/get_packaging_details')
     },
     addPackaging(payload) {
-        return apiClient.post('/master_data/create_packaging_details', payload)
+        return apiClient.post('/packagings/create_packaging_details', payload)
     },
     updatePackaging(packagingId, payload) {
-        return apiClient.put(`/master_data/update_packaging_details/${packagingId}`, payload)
+        return apiClient.put(`/packagings/update_packaging_details/${packagingId}`, payload)
     },
     deletePackaging(packagingId) {
-        return apiClient.delete(`/master_data/delete_packaging_details/${packagingId}`)
+        return apiClient.delete(`/packagings/delete_packaging_details/${packagingId}`)
     },
 
     // --- Parties ---
     getParties() {
-        return apiClient.get('/master_data/get_party_details')
+        return apiClient.get('/party_details/get_party_details')
     },
     addParty(payload) {
-        return apiClient.post('/master_data/create_party_details', payload)
+        return apiClient.post('/party_details/create_party_details', payload)
     },
     updateParty(partyId, payload) {
-        return apiClient.put(`/master_data/update_party_details/${partyId}`, payload)
+        return apiClient.put(`/party_details/update_party_details/${partyId}`, payload)
     },
     deleteParty(partyId) {
-        return apiClient.delete(`/master_data/delete_party_details/${partyId}`)
+        return apiClient.delete(`/party_details/delete_party_details/${partyId}`)
     },
 
     // --- Stock Items ---
     getStockItems() {
-        return apiClient.get('/master_data/get_stock_items_details')
+        return apiClient.get('/stock_items_details/get_stock_items')
     },
     addStockItem(payload) {
-        return apiClient.post('/master_data/create_stock_items_details', payload)
+        return apiClient.post('/stock_items_details/create_stock_items_details', payload)
     },
     updateStockItem(itemId, payload) {
-        return apiClient.put(`/master_data/update_stock_items_details/${itemId}`, payload)
+        return apiClient.put(`/stock_items_details/update_stock_items_details/${itemId}`, payload)
     },
     deleteStockItem(itemId) {
-        return apiClient.delete(`/master_data/delete_stock_items_details/${itemId}`)
+        return apiClient.delete(`/stock_items_details/delete_stock_items_details/${itemId}`)
     },
 
     // --- Transporters ---
     getTransporters() {
-        return apiClient.get('/master_data/get_transportor_details')
+        return apiClient.get('/transportor_details/get_transportors')
     },
     addTransporter(payload) {
-        return apiClient.post('/master_data/create_transportor_details', payload)
+        return apiClient.post('/transportor_details/create_transportor_details', payload)
     },
     updateTransporter(transporterId, payload) {
-        return apiClient.put(`/master_data/update_transportor_details/${transporterId}`, payload)
+        return apiClient.put(`/transportor_details/update_transportor_details/${transporterId}`, payload)
     },
     deleteTransporter(transporterId) {
-        return apiClient.delete(`/master_data/delete_transportor/${transporterId}`)
+        return apiClient.delete(`/transportor_details/delete_transportor/${transporterId}`)
     },
 
     // --- Weighbridge ---
     getWeighbridges() {
-        return apiClient.get('/master_data/get_weight_bridge_operator_details')
+        return apiClient.get('/wb/get_wb_operators')
     },
     addWeighbridge(payload) {
-        return apiClient.post('/master_data/create_weight_bridge_operator_details', payload)
+        return apiClient.post('/wb/create_wb_operator', payload)
     },
     updateWeighbridge(wbId, payload) {
-        return apiClient.put(`/master_data/update_weight_bridge_operator_details/${wbId}`, payload)
+        return apiClient.put(`/wb/update_wb_operator/${wbId}`, payload)
     },
     deleteWeighbridge(wbId) {
-        return apiClient.delete(`/master_data/delete_weight_bridge_operator_details/${wbId}`)
+        return apiClient.delete(`/wb/delete_wb_operator/${wbId}`)
     },
 
     // --- Transactions (Sales/Purchase) ---

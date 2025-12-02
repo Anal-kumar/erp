@@ -127,10 +127,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
-import axios from 'axios';
-import config from '@/config';
+import { ref, reactive, onMounted } from 'vue';
 import { useToast } from 'vue-toastification';
+import { apiClient, firmDetailsService, productionService } from '@/services'
+import storage from '@/utils/storage';
 
 const toast = useToast();
 const records = ref([]);
@@ -138,7 +138,7 @@ const firm = ref({ page_size: 10 });
 const clerks = ref([]);
 const loading = ref(false);
 const showEditModal = ref(false);
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 
 const filters = reactive({
   lot_number: '',
@@ -182,38 +182,10 @@ const headers = [
   { title: 'Actions', key: 'actions', align: 'center', sortable: false },
 ];
 
-const fetchFirmDetails = async () => {
-  try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
-    if (response.status === 200 && response.data) {
-      firm.value = {
-        firm_name: response.data.firm_name || 'Unknown Firm',
-        firm_address: response.data.firm_address || 'Unknown Address',
-        page_size: response.data.page_size || 10,
-      };
-    }
-  } catch (err) {
-    console.error('Failed to fetch firm details:', err);
-    toast.error('Failed to fetch firm details');
-  }
-};
-
 const fetchRecords = async () => {
   loading.value = true;
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/lots/get_all_lots`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.getLots()
 
     if (Array.isArray(response.data)) {
       records.value = response.data;
@@ -226,25 +198,6 @@ const fetchRecords = async () => {
     toast.error(error.response?.data?.message || 'Error fetching lot records');
   } finally {
     loading.value = false;
-  }
-};
-
-const fetchClerks = async () => {
-  try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/clerks/clerks/`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
-    if (response.status === 200) {
-      clerks.value = response.data.filter((clerk) => clerk.is_active);
-    }
-  } catch (error) {
-    console.error('Error fetching clerks:', error);
-    toast.error('Failed to load clerk list.');
   }
 };
 
@@ -322,7 +275,7 @@ const updateRecord = async () => {
   loading.value = true;
   try {
     if (!clerks.value.length) {
-      await fetchClerks();
+      await productionService.getClerks();
     }
 
     const checkerClerk = clerks.value.find((c) => c.id === editForm.checker_clerk);
@@ -379,11 +332,11 @@ const updateRecord = async () => {
       return;
     }
 
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/lots/update_lot/${editForm.id}`,
+    const response = await apiClient.put(
+      `/lots/update_lot/${editForm.id}`,
       payload,
       {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${storage.getToken()}` },
       },
     );
 
@@ -404,8 +357,8 @@ const updateRecord = async () => {
 
 onMounted(() => {
   fetchRecords();
-  fetchClerks();
-  fetchFirmDetails();
+  productionService.getClerks();
+  firmDetailsService.getFirmDetails();
 });
 </script>
 

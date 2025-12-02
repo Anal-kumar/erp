@@ -134,7 +134,7 @@
               </v-col>
             </v-row>
 
-            <div class="d-flex justify-center gap-4 mt-4">
+            <div class="d-flex justify-center ga-4 mt-4">
               <v-btn type="submit" color="primary" :loading="isSubmitting" :disabled="isSubmitting">
                 Update
               </v-btn>
@@ -151,10 +151,10 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
-import axios from 'axios';
 import { debounce } from 'lodash';
 import { useToast } from 'vue-toastification';
-import config from '@/config';
+import storage from '@/utils/storage'
+import { productionService, firmDetailsService, getModuleStatus } from '@/services'
 
 const toast = useToast();
 
@@ -167,7 +167,7 @@ const clerks = ref([]);
 const isSubmitting = ref(false);
 const isLoading = ref(false);
 const firm = ref({ page_size: 10 });
-const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+const user = storage.getUser() || '{}';
 
 const filters = reactive({
   batch_name: '',
@@ -251,14 +251,7 @@ const formatMoisture = () => {
 
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await firmDetailsService.getFirmDetails();
     if (response.status === 200 && response.data) {
       firm.value = {
         firm_name: response.data.firm_name || 'Unknown Firm',
@@ -277,12 +270,7 @@ const fetchFirmDetails = async () => {
 const fetchVerifications = async () => {
   isLoading.value = true;
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/cross_verifications/get_cross_verifications`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      }
-    );
+    const response = await productionService.getCrossVerificationDetails();
     if (response.status === 200) {
       verifications.value = response.data;
     } else {
@@ -298,12 +286,7 @@ const fetchVerifications = async () => {
 
 const fetchBatches = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/batches/get_all_batches`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      }
-    );
+    const response = await productionService.getBatches();;
     if (response.status === 200) {
       batches.value = response.data;
     } else {
@@ -317,12 +300,7 @@ const fetchBatches = async () => {
 
 const fetchClerks = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/clerks/clerks`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      }
-    );
+    const response = await productionService.getClerks();
     if (response.status === 200) {
       clerks.value = response.data.filter((clerk) => clerk.is_active === true);
     } else {
@@ -426,13 +404,7 @@ const updateVerification = async () => {
       user_login_id: editForm.user_login_id,
     };
 
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/cross_verifications/update_cross_verification/${selectedVerificationId.value}`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      }
-    );
+    const response = await productionService.updateCrossVerification(selectedVerificationId.value, payload);
 
     if (response.status === 200 || response.status === 201) {
       toast.success('Cross verification updated successfully!');
@@ -481,11 +453,6 @@ const clearFilters = () => {
 };
 
 onMounted(() => {
-  const token = sessionStorage.getItem('token');
-  if (!token) {
-    toast.error('No authentication token found. Please log in.');
-    return;
-  }
   fetchVerifications();
   fetchBatches();
   fetchClerks();

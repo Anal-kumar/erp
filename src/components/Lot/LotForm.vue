@@ -112,6 +112,8 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import axios from 'axios';
 import config from '@/config';
 import { useToast } from 'vue-toastification';
+import storage from '@/utils/storage';
+import apiClient from '@/services/api';
 
 const toast = useToast();
 const isModuleEnabled = ref(false);
@@ -163,11 +165,11 @@ const formatNumber = (field) => {
 
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
+    const response = await apiClient.get(
+      `/modules/get_modules`,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          Authorization: `Bearer ${storage.getToken()}`,
         },
       },
     );
@@ -189,11 +191,11 @@ const fetchModuleStatus = async () => {
 
 const fetchClerks = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/clerks/clerks/`,
+    const response = await apiClient.get(
+      `/clerks/clerks/`,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          Authorization: `Bearer ${storage.getToken()}`,
         },
       },
     );
@@ -254,7 +256,7 @@ const submitForm = async () => {
       payload,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          Authorization: `Bearer ${storage.getToken()}`,
         },
       },
     );
@@ -290,9 +292,9 @@ const submitForm = async () => {
 };
 
 onMounted(() => {
-  const sessionUser = sessionStorage.getItem('user');
+  const sessionUser = storage.getUser();
   if (sessionUser) {
-    const user = JSON.parse(sessionUser);
+    const user = sessionUser;
     form.user_login_id = user.id;
   }
   fetchClerks();

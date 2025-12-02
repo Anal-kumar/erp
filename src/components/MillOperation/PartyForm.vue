@@ -33,7 +33,7 @@
                 :rules="[v => !!v || 'Remarks is required']" @input="form.remarks = $event.target.value.toUpperCase()"
                 class="mb-2"></v-textarea>
 
-              <div class="d-flex justify-center gap-4 mt-4">
+              <div class="d-flex justify-center ga-4 mt-4">
                 <v-btn type="submit" color="primary" :disabled="!isModuleEnabled" width="120">
                   {{ isEditMode ? 'Update' : 'Add' }}
                 </v-btn>
@@ -88,9 +88,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import millService from '@/services/millService'
-import moduleService from '@/services/moduleService'
-import adminService from '@/services/adminService'
+import { millService, moduleService, adminService } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()

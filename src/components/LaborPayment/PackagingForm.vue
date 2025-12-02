@@ -21,7 +21,7 @@
                 :rules="[v => !!v || 'Remarks is required', v => (v && v.length <= 50) || 'Remarks must not exceed 50 characters']"></v-textarea>
 
               <!-- Buttons -->
-              <div class="d-flex justify-center gap-2 mt-4">
+              <div class="d-flex justify-center ga-2 mt-4">
                 <v-btn type="submit" color="primary" class="text-white">
                   {{ isEditMode ? 'Update' : 'Add' }}
                 </v-btn>
@@ -58,9 +58,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import axios from 'axios'
-import config from '@/config'
+import { ref, reactive, onMounted } from 'vue'
+import storage from '@/utils/storage'
+import { labourService, firmDetailsService, getModuleStatus } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -69,7 +69,7 @@ const selectedPackagingId = ref(null)
 const isModuleEnabled = ref(false)
 const packagings = ref([])
 const firm = ref({ page_size: 10 })
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 const form = reactive({
   bag_weight: '',
   remarks: '',
@@ -102,14 +102,7 @@ const validateForm = () => {
 // fetch firm details
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    )
+    const response = await firmDetailsService.getFirmDetails()
 
     if (response.status === 200 && response.data) {
       firm.value = {
@@ -137,14 +130,7 @@ const fetchFirmDetails = async () => {
 };
 const fetchPackagings = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/bag-packaging/get_labour_bag_packaging_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.getLabourBagPackagings()
     if (response.status === 200) {
       packagings.value = response.data
     }
@@ -156,14 +142,7 @@ const fetchPackagings = async () => {
 // Fetch module status
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await getModuleStatus()
 
     const modules = response.data
     const labourPaymentModule = modules.find((m) => m.module_name === 'labour_payment')
@@ -199,15 +178,7 @@ const addPackaging = async () => {
       remarks: form.remarks.trim(),
     }
 
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/bag-packaging/create_labour_bag_packaging`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.createLabourBagPackaging(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success('Packaging Added Successfully!')
       form.bag_weight = ''
@@ -240,15 +211,7 @@ const updatePackaging = async () => {
       bag_weight: form.bag_weight, // Use parseInt for integer
       remarks: form.remarks.trim(),
     }
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/bag-packaging/update_labour_bag_packaging/${selectedPackagingId.value}`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.updateLabourBagPackaging(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success('Packaging details updated')
       form.bag_weight = ''

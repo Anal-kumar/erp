@@ -113,7 +113,7 @@
             {{ item.weight_bridge_operator?.operator_name || 'N/A' }}
           </template>
           <template v-slot:item.actions="{ item }">
-            <div class="d-flex gap-2">
+            <div class="d-flex ga-2">
               <v-btn icon="mdi-eye" size="x-small" variant="text" color="grey" @click="viewDetails(item)"></v-btn>
               <v-btn icon="mdi-pencil" size="x-small" variant="text" color="primary"
                 @click="editTransaction(item)"></v-btn>
@@ -572,9 +572,10 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import millService from '@/services/millService';
+import { millService } from '@/services';
 import { useToast } from 'vue-toastification';
 import { useRouter } from 'vue-router';
+import storage from '@/utils/storage'
 import TransactionDetails from './TransactionDetails.vue';
 import PackagingModal from './Modal/PackagingModal.vue'
 import StockItmeModal from './Modal/StockItemModal.vue'
@@ -595,9 +596,9 @@ const TypeFilter = ref('')
 const PaymentStatusFilter = ref('All Status');
 const fromDate = ref('');
 const toDate = ref('');
-const user = JSON.parse(sessionStorage.getItem('user'));
+const user = storage.getUser();
 
-//this use for pagination 
+//this use for pagination
 const firm = ref([])
 
 // State for modals

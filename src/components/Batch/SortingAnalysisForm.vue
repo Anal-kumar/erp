@@ -152,8 +152,8 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import axios from 'axios';
-import config from '@/config';
+import { productionService, getModuleStatus } from '@/services';
+import storage from '@/utils/storage';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
@@ -191,14 +191,7 @@ const formatNumber = (field) => {
 
 const fetchClerks = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/clerks/clerks/`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      }
-    );
+    const response = await productionService.getClerks();
     if (response.status === 200) {
       clerks.value = response.data.filter(clerk => clerk.is_active);
     } else {
@@ -216,14 +209,7 @@ const fetchClerks = async () => {
 
 const fetchBatches = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/batches/get_all_batches`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      }
-    );
+    const response = await productionService.getBatches();
     if (response.status === 200) {
       batches.value = response.data;
     } else {
@@ -313,14 +299,7 @@ const validateForm = () => {
 
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await getModuleStatus();
     const modules = response.data;
     const BatchModule = modules.find((m) => m.module_name === 'batch_operations');
     if (!BatchModule) {
@@ -365,15 +344,7 @@ const submitForm = async () => {
       user_login_id: form.user_login_id,
     };
 
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/sorting_analysis/create_sorting_analysis/`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      }
-    );
+    const response = await productionService.createSortingAnalysis(payload);
     if (response.status === 200 || response.status === 201) {
       toast.success('Sorting analysis submitted successfully!');
       Object.assign(form, {
@@ -410,9 +381,9 @@ const submitForm = async () => {
 };
 
 onMounted(() => {
-  const sessionUser = sessionStorage.getItem('user');
+  const sessionUser = storage.getUser();
   if (sessionUser) {
-    const user = JSON.parse(sessionUser);
+    const user = sessionUser;
     form.user_login_id = user.id;
   } else {
     toast.error('No user session found. Please log in.');

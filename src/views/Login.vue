@@ -44,8 +44,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import authService from '@/services/authService'
-import apiClient from '@/services/api' // Direct access for DB status check if needed, or move to service
+import { authService, apiClient } from '@/services'
 import InitDbModal from '@/views/InitDbModal.vue'
 
 const router = useRouter()
@@ -62,7 +61,7 @@ const FrontendVersion = localStorage.getItem('appVersion') || '1.0.0'
 const buildVersion = localStorage.getItem('buildVersion') || '1'
 
 onMounted(() => {
-  const token = sessionStorage.getItem('token')
+  const token = localStorage.getItem('auth_token')
   if (token) {
     router.push('/')
   }
@@ -74,7 +73,7 @@ const togglePassword = () => {
 
 // Move DB status check to a service if possible, or keep using apiClient directly for now
 // Ideally, we should have a systemService.js or similar.
-// For now, I'll use apiClient directly for the DB check to keep it simple, 
+// For now, I'll use apiClient directly for the DB check to keep it simple,
 // or I can add checkDbStatus to authService or a new service.
 // Let's add it to authService for now as it's part of the login flow/system check.
 
@@ -109,15 +108,8 @@ const login = async () => {
 
     const response = await authService.login(credentials)
 
-    if (response.status === 200) {
-      const token = response.data.access_token
-      const user = response.data.user
-      const role = response.data.user.role
-
-      sessionStorage.setItem('token', token)
-      sessionStorage.setItem('user', JSON.stringify(user))
-      sessionStorage.setItem('user_role', JSON.stringify(role))
-
+    if (response.access_token) {
+      const token = response.access_token
       document.cookie = `token=${token}; path=/;`
       router.push('/home')
       toast.success('Login successfully')

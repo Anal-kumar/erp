@@ -16,7 +16,7 @@
       <v-divider class="mb-2"></v-divider>
 
       <!-- Event List -->
-      <v-list density="compact" class="event-list flex-grow-1">
+      <v-list density="compact" class="event-list grow">
         <v-list-item v-if="selectedDate && filteredEvents.length === 0" class="text-grey text-center pa-4">
           <v-icon icon="mdi-calendar-blank" size="large" class="mb-2"></v-icon>
           <v-list-item-title class="text-body-2 text-wrap">
@@ -28,7 +28,7 @@
         </v-list-item>
 
         <v-list-item v-for="(event, index) in filteredEvents" :key="event.id" class="event-item mb-2 rounded border-s-4"
-          :class="getEventColorClass(event)">
+          elevation="3" :class="getEventColorClass(event)">
           <template v-slot:default>
             <div class="d-flex flex-column w-100 py-1">
               <div class="d-flex justify-space-between align-start">
@@ -36,10 +36,10 @@
                   <v-list-item-title class="font-weight-bold text-subtitle-2">{{ event.title }}</v-list-item-title>
                   <v-list-item-subtitle class="text-caption">{{ formatDate(event.date) }}</v-list-item-subtitle>
                 </div>
-                <div class="d-flex gap-1">
-                  <v-btn icon="mdi-pencil" size="x-small" variant="text" color="grey-darken-1"
+                <div class="d-flex ga-1 pa-1">
+                  <v-btn icon="mdi-pencil" size="x-small" variant="text" color="grey-darken-1" elevation="5"
                     @click.stop="editEvent(event)"></v-btn>
-                  <v-btn icon="mdi-delete" size="x-small" variant="text" color="error"
+                  <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" elevation="5"
                     @click.stop="deleteEvent(event.id)"></v-btn>
                 </div>
               </div>
@@ -70,7 +70,7 @@
           <v-text-field v-model="newEvent.date" label="Date" type="date" variant="outlined" density="comfortable"
             prepend-inner-icon="mdi-calendar" class="mb-3"></v-text-field>
 
-          <div class="d-flex justify-end gap-2 mt-4">
+          <div class="d-flex justify-end ga-2 mt-4">
             <v-btn color="grey-darken-1" variant="text" @click="closeModal">
               Cancel
             </v-btn>
@@ -88,10 +88,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
-import dashboardService from '@/services/dashboardService'
-import expiryReminderService from '@/services/expiryReminderService'
+import { dashboardService, expiryReminderService } from '@/services'
 import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
+import storage from '@/utils/storage'
 
 // Use PascalCase for component to match template usage
 const VCalendar = DatePicker
@@ -361,7 +361,7 @@ const getEventColorClass = (item) => {
 }
 
 onMounted(() => {
-  const token = sessionStorage.getItem('token')
+  const token = storage.getToken()
   if (!token) {
     toast.error('Please log in to view events')
     router.push('/login')

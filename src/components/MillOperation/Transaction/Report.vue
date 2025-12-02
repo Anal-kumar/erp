@@ -160,7 +160,7 @@
               </div>
             </v-col>
             <v-col cols="12" md="9">
-              <div class="d-flex flex-wrap gap-4 justify-end">
+              <div class="d-flex flex-wrap ga-4 justify-end">
                 <span class="font-weight-medium">Total Quintals: {{ totalQuintalWeight }} Qtl</span>
                 <span class="font-weight-medium">Total Net Amount: ₹{{ totalNetAmount }}</span>
                 <span class="font-weight-medium">Total Paid Amount: ₹{{ totalPaidAmount }}</span>
@@ -183,8 +183,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import millService from '@/services/millService'
-import adminService from '@/services/adminService'
+import { millService, adminService } from '@/services'
 import { useToast } from 'vue-toastification'
 
 defineOptions({

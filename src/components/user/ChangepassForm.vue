@@ -51,7 +51,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import authService from '@/services/authService'
+import { authService } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -89,7 +89,14 @@ const submitForm = async () => {
       toast.success(res.data)
 
       // Reset form
-      form.value.reset()
+      formData.current_password = ''
+      formData.password = ''
+      formData.confirm_password = ''
+
+      if (form.value) {
+        form.value.resetValidation()
+      }
+
       // Restore user ID and login ID which might be cleared by reset
       formData.user_id = JSON.parse(sessionStorage.getItem('user')).id
       formData.user_login_id = JSON.parse(sessionStorage.getItem('user')).user_login_id

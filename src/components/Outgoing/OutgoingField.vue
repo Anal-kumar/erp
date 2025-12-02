@@ -47,7 +47,7 @@
 
                 <!-- Vehicle Number -->
                 <v-col cols="12" md="6">
-                  <div class="d-flex gap-2">
+                  <div class="d-flex ga-2">
                     <v-text-field v-model="form.vehicle_no_prefix" label="Vehicle No Prefix" placeholder="CG04QB"
                       variant="outlined" density="compact" maxlength="6" class="w-50"
                       @input="form.vehicle_no_prefix = $event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')"></v-text-field>
@@ -129,7 +129,7 @@
                 {{ item.bags_no ? 'Yes' : 'No' }}
               </template>
               <template v-slot:item.actions="{ index }">
-                <div class="d-flex gap-2 justify-center">
+                <div class="d-flex ga-2 justify-center">
                   <v-icon color="primary" size="small" @click="editItem(index)"
                     class="cursor-pointer">mdi-pencil</v-icon>
                   <v-icon color="error" size="small" @click="deleteItem(index)"

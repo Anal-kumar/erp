@@ -1,7 +1,7 @@
 // Storage utility with encryption and automatic expiration
 import CryptoJS from 'crypto-js'
 
-const ENCRYPTION_KEY = 'rice-mill-erp-secret-key-2024' // In production, use env variable
+const ENCRYPTION_KEY = 'rice-mill-erp-secret-key-2025' // In production, use env variable
 const TOKEN_KEY = 'auth_token'
 const USER_KEY = 'user_data'
 const TOKEN_EXPIRY_KEY = 'token_expiry'

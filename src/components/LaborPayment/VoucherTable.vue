@@ -79,7 +79,7 @@
             {{ item.user_login || '-' }}
           </template>
           <template v-slot:item.actions="{ item }">
-            <div class="d-flex gap-2 justify-center">
+            <div class="d-flex ga-2 justify-center">
               <v-icon color="info" @click="viewVoucher(item.id)" class="cursor-pointer">mdi-eye</v-icon>
               <v-icon color="primary" @click="editVoucherData(item)" class="cursor-pointer">mdi-pencil</v-icon>
             </div>
@@ -349,17 +349,14 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import axios from 'axios';
 import { useToast } from 'vue-toastification';
-import config from '@/config';
-import { useRouter } from 'vue-router';
+import { labourService, firmDetailsService } from '@/services';
 // Adjust path as needed
 // Assuming VoucherForm is a component you might want to use, but here we are focusing on the table and edit functionality.
 // If VoucherForm is needed, import it. For now, I'll comment it out as it wasn't explicitly asked to be refactored here, but the template uses it.
 import VoucherForm from './VoucherForm.vue';
 
 const toast = useToast();
-const router = useRouter();
 
 // Filters
 const gangFilter = ref('');
@@ -590,14 +587,7 @@ watch(
 // fetch firm details
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    )
+    const response = await firmDetailsService.getFirmDetails()
 
     if (response.status === 200 && response.data) {
       firm.value = {
@@ -627,19 +617,7 @@ const fetchFirmDetails = async () => {
 // Fetch vouchers
 const fetchVoucher = async () => {
   try {
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      toast.error('Session expired. Please log in again.');
-      router.push('/login');
-      return;
-    }
-
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/labour-payment-vouchers/get_vouchers`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const response = await labourService.getVouchers();
 
     if (response.status === 200) {
       vouchers.value = response.data.map((v) => ({
@@ -670,15 +648,13 @@ const fetchVoucher = async () => {
 // Fetch dropdown options
 const fetchDropdowns = async () => {
   try {
-    const token = sessionStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-
+    
     const [gangsRes, itemsRes, particularsRes, packagingsRes, locationsRes] = await Promise.all([
-      axios.get(`${config.apiBaseUrl}/api/${config.version}/labour-gang/get_labour_gang`, { headers }),
-      axios.get(`${config.apiBaseUrl}/api/${config.version}/work-items/get_labour_work_item`, { headers }),
-      axios.get(`${config.apiBaseUrl}/api/${config.version}/work-particular/get_labour_work_particulars_details`, { headers }),
-      axios.get(`${config.apiBaseUrl}/api/${config.version}/bag-packaging/get_labour_bag_packaging_details`, { headers }),
-      axios.get(`${config.apiBaseUrl}/api/${config.version}/work-location/get_labour_work_location_details`, { headers }),
+      labourService.getLabourGangs(),
+      labourService.getLabourWorkItems(),
+      labourService.getLabourWorkParticulars(),
+      labourService.getLabourBagPackagings(),
+      labourService.getLabourWorkLocations(),
     ]);
 
     gangs.value = gangsRes.data;
@@ -759,7 +735,6 @@ const handleSubmit = async () => {
   }
   isSubmitting.value = true;
   try {
-    const token = sessionStorage.getItem('token');
     const payload = {
       vch_date: editVoucher.value.vch_date,
       remarks: editVoucher.value.remarks,
@@ -793,11 +768,7 @@ const handleSubmit = async () => {
     };
 
     if (isEditing.value) {
-      await axios.put(
-        `${config.apiBaseUrl}/api/${config.version}/labour-payment-vouchers/update_voucher/${editVoucher.value.id}`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await labourService.updateVoucher(editVoucher.value.id, payload);
       toast.success('Voucher updated successfully');
     }
     closeEditModal();

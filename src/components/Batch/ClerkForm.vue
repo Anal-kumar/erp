@@ -20,7 +20,7 @@
               <v-checkbox v-model="form.is_active" label="Active" color="primary" density="compact"
                 hide-details></v-checkbox>
 
-              <div class="d-flex justify-center gap-2 mt-4">
+              <div class="d-flex justify-center ga-2 mt-4">
                 <v-btn type="submit" color="primary" :loading="isSubmitting" :disabled="isSubmitting">
                   {{ isEditMode ? 'Update' : 'Add' }}
                 </v-btn>
@@ -63,9 +63,9 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import axios from 'axios';
-import config from '@/config';
 import { useToast } from 'vue-toastification';
+import { productionService, firmDetailsService, getModuleStatus } from '@/services';
+import storage from '@/utils/storage';
 
 const toast = useToast();
 const isEditMode = ref(false);
@@ -82,7 +82,7 @@ const form = reactive({
 
 const clerks = ref([]);
 const firm = ref({ page_size: 10 });
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 
 const headers = [
   { title: 'SNO', key: 'sno', align: 'center', sortable: false },
@@ -95,14 +95,7 @@ const headers = [
 
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await firmDetailsService.getFirmDetails();
 
     if (response.status === 200 && response.data) {
       firm.value = {
@@ -133,14 +126,7 @@ const validateForm = () => {
 
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await getModuleStatus();
     const modules = response.data;
     const BatchModule = modules.find((m) => m.module_name === 'batch_operations');
     if (!BatchModule) {
@@ -159,14 +145,7 @@ const fetchModuleStatus = async () => {
 
 const fetchClerks = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/clerks/clerks/`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await productionService.getClerks();
     if (response.status === 200) {
       clerks.value = response.data;
     }
@@ -190,15 +169,7 @@ const addClerk = async () => {
       clerk_mob_no: form.clerk_mob_no,
       is_active: form.is_active,
     };
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/clerks/clerk/`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await productionService.createClerk(payload);
     if (response.status === 200 || response.status === 201) {
       toast.success('Clerk added successfully!');
       form.clerk_name = '';
@@ -238,15 +209,7 @@ const updateClerk = async () => {
       clerk_mob_no: form.clerk_mob_no,
       is_active: form.is_active,
     };
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/clerks/clerk/${selectedClerkId.value}`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await productionService.updateClerk(selectedClerkId.value, payload);
     if (response.status === 200 || response.status === 201) {
       toast.success('Clerk updated successfully!');
       form.clerk_name = '';
@@ -273,12 +236,12 @@ const cancelEdit = () => {
 };
 
 onMounted(() => {
-  const sessionUser = sessionStorage.getItem('user');
+  const sessionUser = storage.getUser();
   if (sessionUser) {
-    const userData = JSON.parse(sessionUser);
+    const userData = sessionUser;
     form.user_login_id = userData.id;
   }
-  fetchClerks();
+  productionService.getClerks()
   fetchModuleStatus();
   fetchFirmDetails();
 });

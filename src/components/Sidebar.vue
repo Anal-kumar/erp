@@ -25,7 +25,8 @@
 
       <!-- Dropdown Menus -->
       <template v-for="(menu, index) in menus.slice(0, menus.length - 1)" :key="index">
-        <v-list-group :value="menu.title" :disabled="menu.disabled">
+        <!-- Expanded Mode: Accordion -->
+        <v-list-group v-if="isSidebarVisible" :value="menu.title" :disabled="menu.disabled">
           <template v-slot:activator="{ props }">
             <v-list-item v-bind="props" :prepend-icon="getIconName(menu.icon)" :title="menu.title"></v-list-item>
           </template>
@@ -33,6 +34,17 @@
           <v-list-item v-for="(item, idx) in menu.items" :key="idx" :title="item.label" :to="item.to" :value="item.to"
             :disabled="menu.disabled"></v-list-item>
         </v-list-group>
+
+        <!-- Collapsed Mode: Floating Menu -->
+        <v-menu v-else open-on-hover location="end">
+          <template v-slot:activator="{ props }">
+            <v-list-item v-bind="props" :prepend-icon="getIconName(menu.icon)" :title="menu.title"></v-list-item>
+          </template>
+          <v-list density="compact" nav>
+            <v-list-item v-for="(item, idx) in menu.items" :key="idx" :title="item.label" :to="item.to" :value="item.to"
+              :disabled="menu.disabled"></v-list-item>
+          </v-list>
+        </v-menu>
       </template>
     </v-list>
 
@@ -125,9 +137,9 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import axios from 'axios'
-import config from '@/config'
 import { useToast } from 'vue-toastification'
+import { backupService, moduleService } from '@/services'
+import storage from '@/utils/storage'
 
 defineOptions({ name: 'SidebarPage' })
 
@@ -185,8 +197,8 @@ const openDbModal = async () => {
 
   try {
     const [dbsRes, currentRes] = await Promise.all([
-      axios.get(`${config.apiBaseUrl}/api/${config.version}/backups/databases`),
-      axios.get(`${config.apiBaseUrl}/api/${config.version}/backups/current-database`),
+      backupService.getDatabases(),
+      backupService.getCurrentDatabase(),
     ])
 
     databases.value = dbsRes.data.databases || []
@@ -221,16 +233,7 @@ const confirmRestore = async () => {
     const formData = new FormData()
     formData.append('file', selectedFile.value[0])
 
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/backups/restore`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      },
-    )
+    const response = await backupService.restoreDatabase()
 
     if (response.status === 200) {
       toast.success('Data restored successfully')
@@ -245,12 +248,7 @@ const confirmRestore = async () => {
 }
 
 const backupData = async () => {
-  const res = await axios.get(`${config.apiBaseUrl}/api/${config.version}/backups/backup_data`, {
-    headers: {
-      Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-    },
-    responseType: 'blob',
-  })
+  const res = await backupService.downloadBackup()
 
   if (res.status === 200) {
     const url = window.URL.createObjectURL(new Blob([res.data]))
@@ -279,14 +277,7 @@ const deleteData = async () => {
       return
     }
 
-    const res = await axios.delete(
-      `${config.apiBaseUrl}/api/${config.version}/backups/delete_database`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const res = await backupService.deleteDatabase()
 
     if (res.status == 200 || res.status == 204) {
       toast.success(res.data.message)
@@ -300,9 +291,7 @@ const deleteData = async () => {
 const confirmSelection = async () => {
   if (!selectedDb.value) return
   try {
-    await axios.post(`${config.apiBaseUrl}/api/${config.version}/backups/set-database`, {
-      database: `${selectedDb.value}`,
-    })
+    await backupService.setDatabase(selectedDb.value)
     toast.success(`Database switched to: ${selectedDb.value}`)
     showDbModal.value = false
   } catch (error) {
@@ -454,7 +443,7 @@ const updateMenus = () => {
     disabled: menu.module_key ? !enabledModuleKeys.includes(menu.module_key) : false,
   }))
 
-  const user = JSON.parse(sessionStorage.getItem('user') || '{}')
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   if (user?.role === 'admin' || user?.role === 'superadmin') {
     isAdmin.value = true
@@ -490,14 +479,7 @@ const updateMenus = () => {
 
 const fetchModules = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await moduleService.getModules()
     modules.value = response.data
     updateMenus()
   } catch (error) {
@@ -512,10 +494,10 @@ onMounted(() => {
 })
 
 watch(
-  [modules, () => JSON.parse(sessionStorage.getItem('user') || '{}').role],
+  [modules, () => (storage.getUser() || {}).role],
   () => {
     updateMenus()
-  },
+  }
 )
 </script>
 

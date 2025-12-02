@@ -23,7 +23,7 @@ export default {
 
     // Get Latest Renewal Dates
     getLatestRenewalDates() {
-        return apiClient.get('/reminders/get_latest_renewal_dates')
+        return apiClient.get('/renewal/get_latest_renewal_dates')
     },
 
     // Get Renewal History
@@ -33,6 +33,6 @@ export default {
 
     // Renew Document
     renewDocument(payload) {
-        return apiClient.post('/reminders/renewal_doc', payload)
+        return apiClient.post('/renewal/renewal_doc', payload)
     },
 }

@@ -32,7 +32,7 @@
             {{ item.users?.user_login_id }}
           </template>
           <template v-slot:item.actions="{ item }">
-            <div class="d-flex gap-2 justify-center">
+            <div class="d-flex ga-2 justify-center">
               <v-icon color="grey" size="small" class="cursor-pointer" @click="openModal(item)" title="View Details">
                 mdi-eye
               </v-icon>

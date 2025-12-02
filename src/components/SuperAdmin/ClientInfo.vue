@@ -63,10 +63,10 @@
                 <v-text-field :model-value="`${firm.api_url}:${firm.api_port}`" label="API URL" variant="outlined"
                   density="comfortable" readonly bg-color="grey-lighten-4"></v-text-field>
               </div>
-              <div v-else class="d-flex align-center gap-2">
+              <div v-else class="d-flex align-center ga-2">
                 <v-chip label color="grey-darken-1" variant="outlined" class="mr-2" height="48">http://</v-chip>
                 <v-text-field v-model="firm.api_host" label="Host IP" placeholder="192.168.1.49" variant="outlined"
-                  density="comfortable" hide-details class="flex-grow-1"></v-text-field>
+                  density="comfortable" hide-details class="grow"></v-text-field>
                 <v-text-field v-model.number="firm.api_port" label="Port" type="number" variant="outlined"
                   density="comfortable" hide-details style="max-width: 120px;"></v-text-field>
               </div>
@@ -105,7 +105,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import adminService from '@/services/adminService'
+import { adminService } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()

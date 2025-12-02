@@ -63,6 +63,6 @@ app.use(Toast, {
 })
 app.use(router)
 app.use(vuetify)
-app.use(VCalendar, {})
+// app.use(VCalendar, {})
 
 app.mount('#app')

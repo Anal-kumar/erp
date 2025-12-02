@@ -126,21 +126,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import authService from '@/services/authService'
-import adminService from '@/services/adminService'
 import { useToast } from 'vue-toastification'
-
-const router = useRouter()
-const toast = useToast()
-const user = ref(null)
-const error = ref(null)
-const loading = ref(true)
+import { authService, adminService } from '@/services'
 
 defineOptions({
   name: 'UserProfile'
 })
+
+const router = useRouter()
+const toast = useToast()
+const loading = ref(true)
+const error = ref(null)
+const user = ref(null)
 
 const firm = ref({
   firm_name: '',

@@ -201,8 +201,8 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
-import axios from 'axios';
-import config from '@/config';
+import storage from '@/utils/storage'
+import { productionService, firmDetailsService } from '@/services'
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
@@ -214,7 +214,7 @@ const sorts = ref([]);
 const batches = ref([]);
 const clerks = ref([]);
 const firm = ref({ page_size: 10 });
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 const isSubmitting = ref(false);
 const loading = ref(false);
 
@@ -307,15 +307,7 @@ const formatDate = (date) => {
 // fetch firm details
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    )
-
+    const response = await firmDetailsService.getFirmDetails();
     if (response.status === 200 && response.data) {
       firm.value = {
         firm_name: response.data.firm_name || 'Unknown Firm',
@@ -333,12 +325,7 @@ const fetchFirmDetails = async () => {
 const fetchSorts = async () => {
   loading.value = true;
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/sorting_analysis/get_sorting_analysis`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      }
-    );
+    const response = await productionService.getSortingAnalysisDetails();
     if (response.status === 200) {
       sorts.value = response.data;
     } else {
@@ -355,12 +342,7 @@ const fetchSorts = async () => {
 // Fetch batches
 const fetchBatches = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/batches/get_all_batches`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      }
-    );
+    const response = await productionService.getBatches();
     if (response.status === 200) {
       batches.value = response.data;
     } else {
@@ -375,12 +357,7 @@ const fetchBatches = async () => {
 // Fetch clerks
 const fetchClerks = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/clerks/clerks`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      }
-    );
+    const response = await productionService.getClerks();
     if (response.status === 200) {
       clerks.value = response.data.filter((clerk) => clerk.is_active === true);
     } else {
@@ -394,9 +371,9 @@ const fetchClerks = async () => {
 
 // Set logged-in user ID
 const setUserLoginId = () => {
-  const sessionUser = sessionStorage.getItem('user');
+  const sessionUser = storage.getUser();
   if (sessionUser) {
-    const user = JSON.parse(sessionUser);
+    const user = sessionUser;
     editForm.user_login_id = user.id;
   } else {
     toast.error('No user session found. Please log in.');
@@ -453,13 +430,7 @@ const updateSort = async () => {
       user_login_id: editForm.user_login_id,
     };
 
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/sorting_analysis/update_sorting_analysis/${selectedSortId.value}`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      }
-    );
+    const response = await productionService.updateSortingAnalysis(selectedSortId.value, payload);
 
     if (response.status === 200 || response.status === 201) {
       toast.success('Sort analysis updated successfully!');

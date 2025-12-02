@@ -44,9 +44,9 @@ const checkInactivity = () => {
 // Logout function
 const logout = () => {
     // Clear session storage
-    sessionStorage.removeItem('token')
-    sessionStorage.removeItem('user')
-    sessionStorage.removeItem('user_role')
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('user_role')
 
     // Clear cookie
     document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'

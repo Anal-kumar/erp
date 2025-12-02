@@ -87,7 +87,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import adminService from '@/services/adminService'
+import { adminService } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()

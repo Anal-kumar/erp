@@ -1,6 +1,6 @@
 <script setup>
 import Event from '../components/Home/Event.vue'
-import Announcement from '../components/Home/Announcement.vue'
+// import Announcement from '../components/Home/Announcement.vue'
 import Dashboard from '../components/Home/Dashboard.vue'
 </script>
 
@@ -12,7 +12,7 @@ import Dashboard from '../components/Home/Dashboard.vue'
       </v-col>
       <v-col cols="12" lg="3" md="4">
         <Event />
-        <Announcement />
+        <!-- <Announcement /> -->
       </v-col>
     </v-row>
   </v-container>

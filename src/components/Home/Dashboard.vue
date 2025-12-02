@@ -9,7 +9,7 @@
                             <v-icon :icon="stat.icon" size="32" :color="stat.color"></v-icon>
                         </v-avatar>
                         <h3 class="text-h4 font-weight-bold mb-1" :class="`text-${stat.color}-darken-3`">{{ stat.value
-                        }}</h3>
+                            }}</h3>
                         <p class="text-caption text-grey-darken-1 text-uppercase font-weight-medium text-center">
                             {{ stat.label }}
                         </p>
@@ -81,10 +81,10 @@
                         <v-avatar :color="stat.color + '-lighten-5'" size="48" class="mr-4">
                             <v-icon :icon="stat.icon" size="24" :color="stat.color"></v-icon>
                         </v-avatar>
-                        <div class="flex-grow-1">
+                        <div class="grow">
                             <div class="text-caption text-grey-darken-1">{{ stat.label }}</div>
                             <div class="text-h6 font-weight-bold" :class="`text-${stat.color}-darken-3`">{{ stat.value
-                            }}</div>
+                                }}</div>
                         </div>
                     </v-card-text>
                 </v-card>
@@ -95,7 +95,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import millService from '@/services/millService'
+import { millService } from '@/services'
 
 const mainStats = ref([
     {

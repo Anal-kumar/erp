@@ -1,11 +1,6 @@
 import apiClient from './api'
 
 export default {
-    // Get Dashboard Data
-    getDashboardData() {
-        return apiClient.get('/dashboard/get_dashboard_data')
-    },
-
     // Get Events
     getEvents() {
         return apiClient.get('/events/get_events')

@@ -21,7 +21,7 @@
                 :rules="[v => !!v || 'Remarks is required']"></v-textarea>
 
               <!-- Buttons -->
-              <div class="d-flex justify-center gap-2 mt-4">
+              <div class="d-flex justify-center ga-2 mt-4">
                 <v-btn type="submit" color="primary" class="text-white">
                   {{ isEditMode ? 'Update' : 'Add' }}
                 </v-btn>
@@ -62,8 +62,8 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import axios from 'axios'
-import config from '@/config'
+import storage from '@/utils/storage'
+import { labourService, firmDetailsService, getModuleStatus } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -72,7 +72,7 @@ const selectedLocationId = ref(null)
 const isModuleEnabled = ref(false)
 const locations = ref([])
 const firm = ref({ page_size: 10 }) // Initialize with a default page_size
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 const form = reactive({
   work_location: '',
   remarks: '',
@@ -88,14 +88,7 @@ const headers = [
 // Fetch module status
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await getModuleStatus()
 
     const modules = response.data
     const labourPaymentModule = modules.find((m) => m.module_name === 'labour_payment')
@@ -116,14 +109,7 @@ const fetchModuleStatus = async () => {
 // fetch firm details
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    )
+    const response = await firmDetailsService.getFirmDetails()
 
     if (response.status === 200 && response.data) {
       firm.value = {
@@ -152,14 +138,7 @@ const fetchFirmDetails = async () => {
 
 const fetchLocations = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/work-location/get_labour_work_location_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.getLabourWorkLocations()
     if (response.status === 200) {
       locations.value = response.data
     }
@@ -170,9 +149,9 @@ const fetchLocations = async () => {
 }
 
 onMounted(() => {
-  const sessionUser = sessionStorage.getItem('user')
+  const sessionUser = storage.getUser()
   if (sessionUser) {
-    const user = JSON.parse(sessionUser)
+    const user = sessionUser
     form.user_login_id = user.id
   }
   fetchLocations()
@@ -193,15 +172,7 @@ const addLocation = async () => {
       work_locations: form.work_location,
       remarks: form.remarks,
     }
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/work-location/create_labour_work_location`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.createLabourWorkLocation(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success('Location Added Successfully!')
       // Reset form

@@ -1,7 +1,7 @@
 // Environment-based configuration
 const config = {
   development: {
-    apiBaseUrl: 'http://192.168.1.49:5000',
+    apiBaseUrl: 'http://192.168.1.49:8000',
     apiVersion: import.meta.env.VITE_API_VERSION,
     tokenExpiry: 900, // 15 minutes
     refreshTokenExpiry: 604800, // 7 days

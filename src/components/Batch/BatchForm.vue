@@ -20,11 +20,26 @@
                 item-value="stock_item_name" label="Stock Item" placeholder="Select Stock Item" variant="outlined"
                 density="compact" class="mb-2" required></v-select>
 
+              <v-radio-group v-model="selectedInputType" class="mb-2" inline>
+                <v-radio label="Stock Quantity (Bags)" value="stock_quantity"></v-radio>
+                <v-radio label="Stock Weight (Kg)" value="stock_weight"></v-radio>
+              </v-radio-group>
+
+              <v-text-field v-model.number="form.stock_quantity" label="Stock Quantity (Bags)"
+                placeholder="Enter stock quantity (in bags)" type="number" variant="outlined" density="compact"
+                class="mb-2" min="0" step="0.01" :disabled="selectedInputType !== 'stock_quantity'"
+                :required="selectedInputType === 'stock_quantity'"></v-text-field>
+
+              <v-text-field v-model.number="form.stock_weight" label="Stock Weight (Kg)"
+                placeholder="Enter stock weight" type="number" variant="outlined" density="compact" class="mb-4" min="0"
+                step="0.01" :disabled="selectedInputType !== 'stock_weight'"
+                :required="selectedInputType === 'stock_weight'"></v-text-field>
+
               <v-text-field v-model.number="form.pot_number" label="Pot Number (Nos)" placeholder="Enter pot number"
                 type="number" variant="outlined" density="compact" class="mb-4" min="0" max="10" step="1"
                 @input="limitPotNumber" required></v-text-field>
 
-              <div class="d-flex justify-center gap-2">
+              <div class="d-flex justify-center ga-2">
                 <v-btn type="submit" color="primary" :loading="isSubmitting" :disabled="isSubmitting">
                   {{ isEditMode ? 'Update' : 'Add' }}
                 </v-btn>
@@ -45,8 +60,8 @@
           </v-card-title>
           <v-card-text>
             <v-data-table :headers="headers" :items="batches" density="compact" class="elevation-1" hover>
-              <template v-slot:item.sno="{ item }">
-                {{ item.id }}
+              <template v-slot:item.sno="{ index }">
+                {{ index + 1 }}
               </template>
               <template v-slot:item.batch_date="{ item }">
                 {{ formatDate(item.batch_date) }}
@@ -60,6 +75,11 @@
               <template v-slot:item.user_login="{ item }">
                 {{ item.user_login || '-' }}
               </template>
+              <template v-slot:item.actions="{ item }">
+                <v-btn icon size="small" color="primary" @click="editBatch(item)" :disabled="!isModuleEnabled">
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+              </template>
             </v-data-table>
           </v-card-text>
         </v-card>
@@ -70,21 +90,24 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import axios from 'axios';
-import config from '@/config';
 import { useToast } from 'vue-toastification';
+import { productionService, millService, getModuleStatus } from '@/services'
+import storage from '@/utils/storage';
 
 const toast = useToast();
 const isEditMode = ref(false);
 const selectedBatchId = ref(null);
 const isSubmitting = ref(false);
 const isModuleEnabled = ref(false);
+const selectedInputType = ref('stock_quantity'); // Default to stock quantity
 
 const form = reactive({
   batch_name: '',
   batch_date: '',
   pot_number: null,
   stock_item_name: '',
+  stock_quantity: null, // Added for radio button functionality
+  stock_weight: null,    // Added for radio button functionality
   user_login_id: null,
 });
 
@@ -98,12 +121,13 @@ const headers = [
   { title: 'Stock Item', key: 'stock_item_name', align: 'center' },
   { title: 'Pot Number', key: 'pot_number', align: 'center' },
   { title: 'Entry By', key: 'user_login', align: 'center' },
+  { title: 'Actions', key: 'actions', align: 'center' }
 ];
 
 const setUserLoginId = () => {
-  const sessionUser = sessionStorage.getItem('user');
+  const sessionUser = storage.getUser();
   if (sessionUser) {
-    const user = JSON.parse(sessionUser);
+    const user = sessionUser;
     form.user_login_id = user.id;
   }
 };
@@ -125,6 +149,20 @@ const validateForm = () => {
     toast.error('Stock item is required.');
     return false;
   }
+
+  // Validate stock quantity/weight based on selected input type
+  if (selectedInputType.value === 'stock_quantity') {
+    if (form.stock_quantity === null || isNaN(form.stock_quantity) || form.stock_quantity <= 0) {
+      toast.error('Stock Quantity (Bags) must be a positive number.');
+      return false;
+    }
+  } else if (selectedInputType.value === 'stock_weight') {
+    if (form.stock_weight === null || isNaN(form.stock_weight) || form.stock_weight <= 0) {
+      toast.error('Stock Weight (Kg) must be a positive number.');
+      return false;
+    }
+  }
+
   if (form.pot_number === null || isNaN(form.pot_number) || form.pot_number < 0) {
     toast.error('Pot number must be a valid positive integer.');
     return false;
@@ -154,14 +192,7 @@ const formatDate = (date) => {
 
 const fetchStockItems = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/stock_items_details/get_stock_items`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await millService.getStockItems();
     stockItems.value = response.data;
   } catch (error) {
     console.error('Error fetching stock items:', error);
@@ -171,12 +202,7 @@ const fetchStockItems = async () => {
 
 const fetchBatches = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/batches/get_all_batches`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.getBatches();
     if (response.status === 200) {
       batches.value = response.data.slice(-10);
     }
@@ -188,14 +214,7 @@ const fetchBatches = async () => {
 
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await getModuleStatus();
     const modules = response.data;
     const BatchModule = modules.find((m) => m.module_name === 'batch_operations');
     if (!BatchModule) {
@@ -226,14 +245,11 @@ const addBatch = async () => {
       stock_item_name: form.stock_item_name,
       pot_number: Number(form.pot_number),
       user_login_id: form.user_login_id,
+      // Conditionally add stock_quantity or stock_weight
+      ...(selectedInputType.value === 'stock_quantity' && { stock_quantity: Number(form.stock_quantity) }),
+      ...(selectedInputType.value === 'stock_weight' && { stock_weight: Number(form.stock_weight) }),
     };
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/batches/create_batch`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.createBatch(payload);
     if (response.status === 200 || response.status === 201) {
       toast.success('Batch added successfully!');
       resetForm();
@@ -247,6 +263,32 @@ const addBatch = async () => {
   }
 };
 
+const editBatch = (item) => {
+  if (!item || (!item.id && !item.batch_id)) {
+    toast.error('Unable to edit: Invalid batch data');
+    return;
+  }
+
+  isEditMode.value = true;
+  selectedBatchId.value = item.id || item.batch_id;
+
+  form.batch_name = item.batch_name;
+  form.batch_date = item.batch_date ? new Date(item.batch_date).toISOString().split('T')[0] : '';
+  form.stock_item_name = item.stock_item_name;
+  form.pot_number = item.pot_number;
+  form.stock_quantity = item.stock_quantity;
+  form.stock_weight = item.stock_weight;
+
+  // Set input type based on data
+  if (item.stock_weight && item.stock_weight > 0) {
+    selectedInputType.value = 'stock_weight';
+  } else {
+    selectedInputType.value = 'stock_quantity';
+  }
+
+  setUserLoginId();
+};
+
 const updateBatch = async () => {
   if (!validateForm()) return;
   isSubmitting.value = true;
@@ -255,35 +297,14 @@ const updateBatch = async () => {
       id: selectedBatchId.value,
       batch_name: form.batch_name,
       batch_date: form.batch_date,
-      stock_item: form.stock_item_name, // Note: API might expect 'stock_item' or 'stock_item_name', checking original code it used 'stock_item' in update but 'stock_item_name' in add. Original code line 279: stock_item: form.stock_item. Wait, form has stock_item_name. Original code had a bug or inconsistency? Line 279 says form.stock_item but form definition has stock_item_name. Let's use stock_item_name and map it if needed.
-      // Original code update payload: stock_item: form.stock_item. But form was reactive({ ... stock_item_name: '' }). So form.stock_item would be undefined unless set elsewhere.
-      // Ah, editBatch function in original code (commented out) set form.stock_item.
-      // But addBatch used stock_item_name.
-      // I will assume the backend expects 'stock_item_name' or I should check if I can see the backend. I can't.
-      // However, looking at the addBatch payload in original code: stock_item_name: form.stock_item_name.
-      // Looking at updateBatch in original code: stock_item: form.stock_item.
-      // This looks like a potential bug in the original code or a difference in API.
-      // I'll stick to stock_item_name for now as it seems more consistent with the form model.
-      // Actually, let's check the original code again.
-      // Line 105: stock_item_name: '',
-      // Line 235: stock_item_name: form.stock_item_name, (in addBatch)
-      // Line 279: stock_item: form.stock_item, (in updateBatch)
-      // And the editBatch function was commented out! So update might not have been working or fully implemented?
-      // "const editBatch = (batch) => { ... }" is commented out.
-      // So maybe update functionality wasn't fully active in this component?
-      // But there is an updateBatch function.
-      // I will use stock_item_name as it is what I have in the form.
       stock_item_name: form.stock_item_name,
       pot_number: Number(form.pot_number),
       user_login_id: form.user_login_id,
+      // Conditionally add stock_quantity or stock_weight
+      ...(selectedInputType.value === 'stock_quantity' && { stock_quantity: Number(form.stock_quantity) }),
+      ...(selectedInputType.value === 'stock_weight' && { stock_weight: Number(form.stock_weight) }),
     };
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/batches/update_batch/${selectedBatchId.value}`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.updateBatch(selectedBatchId.value, payload);
     if (response.status === 200 || response.status === 201) {
       toast.success('Batch updated successfully!');
       resetForm();
@@ -299,29 +320,27 @@ const updateBatch = async () => {
   }
 };
 
+const resetForm = () => {
+  form.batch_name = '';
+  form.batch_date = '';
+  form.stock_item_name = '';
+  form.pot_number = null;
+  form.stock_quantity = null;
+  form.stock_weight = null;
+  form.user_login_id = null;
+};
+
 const cancelEdit = () => {
   isEditMode.value = false;
   selectedBatchId.value = null;
   resetForm();
 };
 
-const resetForm = () => {
-  form.batch_name = '';
-  form.batch_date = '';
-  form.pot_number = null;
-  form.stock_item_name = '';
-  form.user_login_id = null;
-  setUserLoginId();
-};
-
 onMounted(() => {
   setUserLoginId();
+  fetchStockItems();
   fetchBatches();
   fetchModuleStatus();
-  fetchStockItems();
 });
-</script>
 
-<style scoped>
-/* Vuetify handles most styles */
-</style>
+</script>

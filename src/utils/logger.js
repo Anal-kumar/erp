@@ -78,7 +78,7 @@ class Logger {
         if (this.environment !== 'development') return // Only in development
 
         const logData = this.formatMessage(LOG_LEVELS.DEBUG, message, context)
-        console.debug('[DEBUG]', logData)
+        // console.debug('[DEBUG]', logData)
     }
 
     /**

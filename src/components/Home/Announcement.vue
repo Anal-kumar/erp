@@ -24,8 +24,8 @@
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-space-between align-start mb-1">
                                     <span class="text-subtitle-2 font-weight-bold text-truncate pr-2">{{ item.title
-                                        }}</span>
-                                    <div class="d-flex flex-shrink-0">
+                                    }}</span>
+                                    <div class="d-flex shrink-0">
                                         <v-btn icon="mdi-pencil" size="x-small" variant="text" color="grey-darken-1"
                                             density="compact" @click.stop="editAnnouncement(item)"></v-btn>
                                         <v-btn icon="mdi-delete" size="x-small" variant="text" color="error"
@@ -63,7 +63,7 @@
                     <v-text-field v-model="form.date" label="Date" type="date" variant="outlined" density="comfortable"
                         required class="mb-3"></v-text-field>
 
-                    <div class="d-flex justify-end gap-2 mt-2">
+                    <div class="d-flex justify-end ga-2 mt-2">
                         <v-btn color="grey-darken-1" variant="text" @click="closeModal">Cancel</v-btn>
                         <v-btn type="submit" color="brown-darken-3" variant="elevated" :loading="loading">
                             {{ isEditMode ? 'Update' : 'Post' }}
@@ -77,7 +77,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import dashboardService from '@/services/dashboardService'
+import { dashboardService } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()

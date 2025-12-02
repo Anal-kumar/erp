@@ -79,8 +79,8 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import config from '@/config'
-import axios from 'axios'
-
+import { apiClient } from '@/services'
+import storage from '@/utils/storage'
 const router = useRouter()
 
 defineOptions({
@@ -98,31 +98,29 @@ const dbName = ref('...')
 const firm = ref({})
 
 function logout() {
-  sessionStorage.removeItem('token')
-  sessionStorage.removeItem('user')
-  sessionStorage.removeItem('user_role')
-  document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+  storage.clearAuth()
   router.push('/login')
 }
 
 async function refreshToken() {
   try {
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/login/refresh_token`,
+    const response = await apiClient.post(
+      `/login/refresh_token`,
       {},
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          Authorization: `Bearer ${storage.getToken()}`,
         },
       },
     )
     if (response.status === 200 && response.data.access_token) {
-      sessionStorage.setItem('token', response.data.access_token)
+      storage.setToken(response.data.access_token)
+      updateTime()
     } else {
       logout()
     }
   } catch (error) {
-    console.error('Token refresh failed:', error)
+    console.error('auth_token refresh failed:', error)
     logout()
   }
 }
@@ -143,40 +141,64 @@ function updateTime() {
 
   dateTime.value = `${day} ${month} ${year} | ${strHours}:${minutes} ${ampm}`
 
-  const token = sessionStorage.getItem('token')
-  if (token) {
-    try {
-      const tokenPayload = JSON.parse(atob(token.split('.')[1]))
-      const tokenExp = tokenPayload.exp
-      const nowTime = Math.floor(Date.now() / 1000)
+  // ---- TOKEN CHECK ----
+  const token = storage.getToken()
+  if (!token) {
+    console.error("Token missing")
+    logout()
+    return
+  }
 
-      if (tokenExp < nowTime) {
-        logout()
-      } else {
-        const diff = tokenExp - nowTime
-        const min = Math.floor(diff / 60)
-        const sec = diff % 60
-        tokenExpiryTime.value = `${min}:${String(sec).padStart(2, '0')}`
+  const parts = token.split('.')
+  if (parts.length !== 3) {
+    console.error("Token format invalid, expected 3 parts")
+    logout()
+    return
+  }
 
-        // Refresh token if less than 60 seconds remaining
-        if (diff < 60) {
-          refreshToken()
-        }
-      }
-    } catch (error) {
-      console.error('Failed to parse token:', error)
-      logout()
-    }
+  let tokenPayload
+  try {
+    tokenPayload = JSON.parse(atob(parts[1]))
+  } catch (err) {
+    console.error("Token decode failed:", err)
+    logout()
+    return
+  }
+
+  // ---- EXPIRATION CHECK ----
+  const tokenExp = tokenPayload.exp
+  const nowTime = Math.floor(Date.now() / 1000)
+
+  if (!tokenExp || isNaN(tokenExp)) {
+    console.error("Token payload does not contain valid exp")
+    logout()
+    return
+  }
+
+  if (tokenExp < nowTime) {
+    logout()
+    return
+  }
+
+  const diff = tokenExp - nowTime
+  const min = Math.floor(diff / 60)
+  const sec = diff % 60
+  tokenExpiryTime.value = `${min}:${String(sec).padStart(2, '0')}`
+
+  // Auto refresh when less than 60 seconds left
+  if (diff < 60) {
+    refreshToken()
   }
 }
 
+
 async function getDatabaseStatus() {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/backups/current-database`,
+    const response = await apiClient.get(
+      `/backups/current-database`,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          Authorization: `Bearer ${storage.getToken()}`,
         },
       },
     )
@@ -195,11 +217,11 @@ async function getDatabaseStatus() {
 
 async function fetchFirmDetails() {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
+    const response = await apiClient.get(
+      `/firm_details/get_firm_details`,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          Authorization: `Bearer ${storage.getToken()}`,
         },
       },
     )
@@ -214,23 +236,12 @@ async function fetchFirmDetails() {
 onMounted(() => {
   interval.value = setInterval(updateTime, 1000)
 
-  const user = sessionStorage.getItem('user')
+  const user = storage.getUser()
 
   if (user) {
-    try {
-      const parsed = JSON.parse(user)
-      currentUser.value = parsed.user_login_id || 'Guest'
-      currentUsername.value =
-        `${parsed.user_first_name || ''} ${parsed.user_second_name || ''}`.trim() || 'guest'
-      const rawRole = parsed?.role
-      userRole.value =
-        rawRole === 'admin' ? 'admin' : rawRole === 'superadmin' ? 'superadmin' : 'user'
-    } catch (e) {
-      console.error('Failed to parse user:', e)
-      currentUser.value = 'Guest'
-      currentUsername.value = 'guest'
-      userRole.value = 'Unknown'
-    }
+    currentUser.value = user.id || 'Unknown'
+    currentUsername.value = user.user_first_name + ' ' + user.user_second_name || 'Unknown'
+    userRole.value = user.role || 'Unknown'
   } else {
     currentUser.value = 'Guest'
     currentUsername.value = 'guest'

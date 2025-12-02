@@ -74,8 +74,7 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
-import adminService from '@/services/adminService'
-import moduleService from '@/services/moduleService'
+import { adminService, moduleService } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -133,8 +132,17 @@ const submitForm = async () => {
     }
 
     // Reset form after successful submission
-    form.value.reset()
-    formData.user_role = false // Reset checkbox manually as form.reset() might not handle it as expected
+    formData.user_login_id = ''
+    formData.user_first_name = ''
+    formData.user_second_name = ''
+    formData.mobile_number = ''
+    formData.designation = ''
+    formData.password = ''
+    formData.user_role = false
+
+    if (form.value) {
+      form.value.resetValidation()
+    }
 
     console.log('user add successfully')
     toast.success('User added Successfully')

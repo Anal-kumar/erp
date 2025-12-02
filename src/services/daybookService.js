@@ -1,12 +1,8 @@
 import apiClient from './api'
 
 export default {
-    // Check module status (this might be better in a general module service, but keeping here for now or duplicating)
-    getModuleStatus() {
-        return apiClient.get('/modules/get_modules')
-    },
 
-    // Get DayBook entries
+  // Get DayBook entries
     getDayBookEntries() {
         return apiClient.get('/daybook/get_daybook')
     },

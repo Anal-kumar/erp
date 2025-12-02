@@ -21,7 +21,7 @@
                 :rules="[v => !!v || 'Remarks is required']"></v-textarea>
 
               <!-- Buttons -->
-              <div class="d-flex justify-center gap-2 mt-4">
+              <div class="d-flex justify-center ga-2 mt-4">
                 <v-btn type="submit" color="primary" class="text-white">
                   {{ isEditMode ? 'Update' : 'Add' }}
                 </v-btn>
@@ -58,9 +58,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import axios from 'axios'
-import config from '@/config'
+import { ref, reactive, onMounted } from 'vue'
+import { labourService, firmDetailsService, getModuleStatus } from '@/services'
+import storage from '@/utils/storage'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -68,7 +68,7 @@ const isEditMode = ref(false)
 const selectedLabourItemId = ref(null)
 const isModuleEnabled = ref(false)
 const firm = ref({ page_size: 10 })
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 const form = reactive({
   labour_item_name: '',
   remarks: '',
@@ -85,15 +85,7 @@ const headers = [
 // fetch firm details
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    )
-
+    const response = await firmDetailsService.getFirmDetails()
     if (response.status === 200 && response.data) {
       firm.value = {
         firm_name: response.data.firm_name || 'Unknown Firm',
@@ -122,14 +114,7 @@ const fetchFirmDetails = async () => {
 // Fetch module status
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await getModuleStatus()
     // Debug API response
     const modules = response.data
     const labourPaymentModule = modules.find((m) => m.module_name === 'labour_payment')
@@ -162,14 +147,7 @@ const validateForm = () => {
 
 const fetchLabourItems = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/work-items/get_labour_work_item`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.getLabourWorkItems()
     if (response.status === 200) {
       labourItems.value = response.data
     }
@@ -180,9 +158,9 @@ const fetchLabourItems = async () => {
 }
 
 onMounted(() => {
-  const sessionUser = sessionStorage.getItem('user')
+  const sessionUser = storage.getUser()
   if (sessionUser) {
-    const user = JSON.parse(sessionUser)
+    const user = sessionUser
     form.user_login_id = user.id
   }
   fetchLabourItems()
@@ -201,15 +179,7 @@ const addLabourItem = async () => {
       labour_item_name: form.labour_item_name,
       remarks: form.remarks,
     }
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/work-items/create_labour_work_item`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.createLabourWorkItem(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success('Item Added Successfully!')
       // Reset form
@@ -244,15 +214,7 @@ const updateLabourItem = async () => {
       labour_item_name: form.labour_item_name,
       remarks: form.remarks,
     }
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/work-items/update_labour_work_item/${selectedLabourItemId.value}`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.updateLabourWorkItem(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success('Item details updated')
       form.labour_item_name = ''

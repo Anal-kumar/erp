@@ -20,7 +20,7 @@
                 :rules="[v => !!v || 'Remarks is required']"></v-textarea>
 
               <!-- Buttons -->
-              <div class="d-flex justify-center gap-2 mt-4">
+              <div class="d-flex justify-center ga-2 mt-4">
                 <v-btn type="submit" color="primary" class="text-white">
                   {{ isEditMode ? 'Update' : 'Add' }}
                 </v-btn>
@@ -57,10 +57,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import axios from 'axios'
-import config from '@/config'
+import { ref, reactive, onMounted } from 'vue'
+import { labourService, firmDetailsService, getModuleStatus } from '@/services'
 import { useToast } from 'vue-toastification'
+import storage from '@/utils/storage'
 
 const toast = useToast()
 const isEditMode = ref(false)
@@ -68,7 +68,7 @@ const selectedWorkId = ref(null)
 const isModuleEnabled = ref(false)
 const works = ref([])
 const firm = ref({ page_size: 10 }) // Initialize with a default page_size
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 const form = reactive({
   work_name: '',
   remarks: '',
@@ -99,14 +99,7 @@ const validateForm = () => {
 // fetch firm details
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    )
+    const response = await firmDetailsService.getFirmDetails()
 
     if (response.status === 200 && response.data) {
       firm.value = {
@@ -134,14 +127,7 @@ const fetchFirmDetails = async () => {
 };
 const fetchWorks = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/work-particular/get_labour_work_particulars_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.getLabourWorkParticulars()
     if (response.status === 200) {
       works.value = response.data
     }
@@ -153,14 +139,7 @@ const fetchWorks = async () => {
 // Fetch module status
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await getModuleStatus()
     // Debug API response
     const modules = response.data
     const labourPaymentModule = modules.find((m) => m.module_name === 'labour_payment')
@@ -179,9 +158,9 @@ const fetchModuleStatus = async () => {
 }
 
 onMounted(() => {
-  const sessionUser = sessionStorage.getItem('user')
+  const sessionUser = storage.getUser()
   if (sessionUser) {
-    const user = JSON.parse(sessionUser)
+    const user = sessionUser
     form.user_login_id = user.id
   }
   fetchWorks()
@@ -200,15 +179,7 @@ const addWork = async () => {
       work_name: form.work_name,
       remarks: form.remarks,
     }
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/work-particular/create_labour_work_particulars`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.createLabourWorkParticulars(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success('Particular Added Successfully!')
       // Reset form
@@ -243,15 +214,7 @@ const updateWork = async () => {
       work_name: form.work_name,
       remarks: form.remarks,
     }
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/work-particular/update_labour_work_particulars/${selectedWorkId.value}`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.updateLabourWorkParticular(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success(' particular details updated')
       form.work_name = ''

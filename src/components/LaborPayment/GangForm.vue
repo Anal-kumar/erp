@@ -37,7 +37,7 @@
                 hide-details></v-checkbox>
 
               <!-- Buttons -->
-              <div class="d-flex justify-center gap-2 mt-4">
+              <div class="d-flex justify-center ga-2 mt-4">
                 <v-btn type="submit" color="primary" class="text-white">
                   {{ isEditMode ? 'Update' : 'Add' }}
                 </v-btn>
@@ -82,9 +82,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import axios from 'axios'
-import config from '@/config'
+import { ref, reactive, onMounted } from 'vue'
+import { labourService, firmDetailsService, getModuleStatus } from '@/services'
+import storage from '@/utils/storage'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -92,7 +92,7 @@ const isEditMode = ref(false)
 const selectedGangId = ref(null)
 const isModuleEnabled = ref(false)
 const gangs = ref([])
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 const firm = ref({ page_size: 10 }) // Default page size
 const form = reactive({
   gang_name: '',
@@ -115,14 +115,7 @@ const headers = [
 // Fetch module status
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await getModuleStatus()
 
     const modules = response.data
     const labourPaymentModule = modules.find((m) => m.module_name === 'labour_payment')
@@ -144,15 +137,7 @@ const fetchModuleStatus = async () => {
 // fetch firm details
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    )
-
+    const response = await firmDetailsService.getFirmDetails();
     if (response.status === 200 && response.data) {
       firm.value = {
         firm_name: response.data.firm_name || 'Unknown Firm',
@@ -180,14 +165,7 @@ const fetchFirmDetails = async () => {
 
 const fetchGangs = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/labour-gang/get_labour_gang`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.getLabourGangs()
     if (response.status === 200) {
       gangs.value = response.data.map((gang) => ({
         ...gang,
@@ -202,9 +180,9 @@ const fetchGangs = async () => {
 }
 
 onMounted(() => {
-  const sessionUser = sessionStorage.getItem('user')
+  const sessionUser = storage.getUser()
   if (sessionUser) {
-    const user = JSON.parse(sessionUser)
+    const user = sessionUser
     form.user_login_id = user.id
   } else {
     toast.error('User session not found. Please log in.')
@@ -229,16 +207,7 @@ const addGang = async () => {
       is_active: form.is_active,
     }
 
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/labour-gang/create_labour_gang`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    )
+    const response = await labourService.createLabourGang(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success('Gang Added Successfully!')
       // Reset form
@@ -293,17 +262,8 @@ const updateGang = async () => {
       remarks: form.remarks,
       is_active: form.is_active,
     }
-    console.log('Update Gang Payload:', payload)
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/labour-gang/update_labour_gang/${selectedGangId.value}`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    )
+    
+    const response = await labourService.updateLabourGang(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success('Gang details updated')
       form.gang_name = ''

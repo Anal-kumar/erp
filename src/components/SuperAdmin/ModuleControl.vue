@@ -41,7 +41,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import moduleService from '@/services/moduleService'
+import { moduleService } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()

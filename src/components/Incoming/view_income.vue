@@ -59,7 +59,7 @@
             </v-chip>
           </template>
           <template v-slot:item.actions="{ item }">
-            <div class="d-flex gap-2 justify-center">
+            <div class="d-flex ga-2 justify-center">
               <v-icon color="info" @click="viewDetails(item)" class="cursor-pointer">mdi-eye</v-icon>
               <v-icon color="primary" @click="openEditModal(item)" class="cursor-pointer">mdi-pencil</v-icon>
             </div>
@@ -215,7 +215,7 @@
                   required></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
-                <div class="d-flex gap-2">
+                <div class="d-flex ga-2">
                   <v-text-field v-model="editForm.vehicle_no_prefix" label="Vehicle Prefix" placeholder="CG04QB"
                     variant="outlined" density="compact" maxlength="6" class="w-50"
                     :error-messages="vehicleNoPrefixError ? 'Invalid prefix' : ''" @input="sanitizeVehicleNoPrefix"
@@ -295,7 +295,7 @@
               </tbody>
             </v-table>
 
-            <div class="d-flex justify-center gap-4 mt-6">
+            <div class="d-flex justify-center ga-4 mt-6">
               <v-btn type="submit" color="primary" :loading="isSubmitting" :disabled="isSubmitting || !isEditFormValid">
                 Update
               </v-btn>
@@ -345,7 +345,7 @@
                   density="compact" min="0" step="0.01"></v-text-field>
               </v-col>
             </v-row>
-            <div class="d-flex justify-center gap-4 mt-4">
+            <div class="d-flex justify-center ga-4 mt-4">
               <v-btn color="primary" @click="saveItem" :disabled="!isItemModalValid">Save</v-btn>
               <v-btn color="error" @click="closeItemModal">Cancel</v-btn>
             </div>
@@ -357,9 +357,9 @@
 </template>
 
 <script>
-import axios from 'axios'
-import config from '@/config'
+import { incomingService, firmDetailsService, getModuleStatus } from '@/services'
 import { useToast } from 'vue-toastification'
+import storage from '@/utils/storage'
 
 export default {
   data() {
@@ -370,7 +370,7 @@ export default {
       loading: false,
       errorMessage: '',
       interval: null,
-      user: JSON.parse(sessionStorage.getItem('user')),
+      user: storage.getUser(),
       filters: {
         brought_by: '',
         vehicle_no: '',
@@ -576,14 +576,8 @@ export default {
   methods: {
     async fetchFirmDetails() {
       try {
-        const response = await axios.get(
-          `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionStorage.getItem('token')}`
-            }
-          }
-        );
+        const response = await firmDetailsService.getFirmDetails()
+          
         if (response.status === 200 && response.data) {
           this.firm = {
             firm_name: response.data.firm_name || 'Unknown Firm',
@@ -610,12 +604,7 @@ export default {
       this.errorMessage = ''
       this.loading = true
       try {
-        const response = await axios.get(
-          `${config.apiBaseUrl}/api/${config.version}/incoming_outgoing/get_incoming_outgoing`,
-          {
-            headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-          },
-        )
+        const response = await incomingService.getIncomings()
         if (Array.isArray(response.data)) {
           this.records = response.data.filter((record) => record.is_incoming === true)
         } else {
@@ -669,14 +658,7 @@ export default {
       this.loading = true
       this.errorMessage = ''
       try {
-        const token = sessionStorage.getItem('token')
-        if (!token) throw new Error('Authentication token missing')
-        const response = await axios.get(
-          `${config.apiBaseUrl}/api/${config.version}/incoming_outgoing/get_incoming_outgoing/${record.id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        )
+        const response = await incomingService.getIncomingById(record.id)
         const data = response.data
         const vehicleMatch = (data.vehicle_no || '').match(/^([A-Z0-9]*?)(\d{0,4})$/) || [
           '',
@@ -831,8 +813,6 @@ export default {
       }
       this.isSubmitting = true
       try {
-        const token = sessionStorage.getItem('token')
-        if (!token) throw new Error('Authentication token missing')
         const payload = {
           io_date: this.editForm.io_date,
           is_incoming: this.editForm.is_incoming,
@@ -861,12 +841,7 @@ export default {
             amount: item.amount !== '' ? Number(item.amount) : null,
           })),
         }
-        const response = await axios.put(
-          `${config.apiBaseUrl}/api/${config.version}/incoming_outgoing/update_incoming/${this.editForm.id}`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } },
-        )
-
+        const response = await incomingService.updateIncoming(this.editForm.id, payload)
         if (response.status === 200 || response.status === 204) {
           this.toast.success('Record updated successfully!')
           this.showEditModal = false

@@ -30,7 +30,7 @@
                 item-value="operator_name" label="Second Batch Operator" placeholder="Select an Operator"
                 variant="outlined" density="compact" :error-messages="errors.second_batch_operator" required></v-select>
 
-              <div class="d-flex justify-center gap-2 mt-4">
+              <div class="d-flex justify-center ga-2 mt-4">
                 <v-btn type="submit" color="primary" :loading="isSubmitting" :disabled="isSubmitting">
                   {{ isEditMode ? 'Update' : 'Submit' }}
                 </v-btn>
@@ -86,9 +86,9 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import axios from 'axios';
-import config from '@/config';
+import { productionService, firmDetailsService, getModuleStatus } from '@/services';
 import { useToast } from 'vue-toastification';
+import storage from '@/utils/storage';
 
 const toast = useToast();
 const isEditMode = ref(false);
@@ -110,7 +110,7 @@ const batches = ref([]);
 const operators = ref([]);
 const drainages = ref([]);
 const firm = ref({ page_size: 10 });
-const user = JSON.parse(sessionStorage.getItem('user')) || null;
+const user = storage.getUser() || null;
 
 const headers = [
   { title: 'SNO', key: 'sno', align: 'center', sortable: false },
@@ -148,14 +148,7 @@ const formatTime = (time) => {
 
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await firmDetailsService.getFirmDetails();
 
     if (response.status === 200 && response.data) {
       firm.value = {
@@ -174,14 +167,7 @@ const fetchFirmDetails = async () => {
 
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await getModuleStatus();
     const modules = response.data;
     const BatchModule = modules.find((m) => m.module_name === 'batch_operations');
     if (!BatchModule) {
@@ -200,14 +186,7 @@ const fetchModuleStatus = async () => {
 
 const fetchOperators = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/batch_operators/get_operators`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    );
+    const response = await productionService.getBatchOperators();
     if (response.status === 200) {
       operators.value = response.data.filter((operator) => operator.is_active === true);
     } else {
@@ -221,12 +200,7 @@ const fetchOperators = async () => {
 
 const fetchBatches = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/batches/get_all_batches`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.getBatches();
     if (response.status === 200) {
       batches.value = response.data;
     } else {
@@ -240,12 +214,7 @@ const fetchBatches = async () => {
 
 const fetchDrainages = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/drainages/get_drainages`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.getDrainageDetails();
     if (response.status === 200) {
       drainages.value = response.data;
     } else {
@@ -300,13 +269,7 @@ const submitForm = async () => {
       second_batch_operator: form.second_batch_operator,
       user_login_id: form.user_login_id,
     };
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/drainages/create_drainage`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.createDrainage(payload);
     if (response.status === 200) {
       toast.success('Form submitted successfully!');
       Object.assign(form, {
@@ -357,13 +320,7 @@ const UpdateForm = async () => {
       second_batch_operator: form.second_batch_operator,
       user_login_id: form.user_login_id,
     };
-    const response = await axios.put(
-      `${config.apiBaseUrl}/api/${config.version}/drainages/update_drainage/${selectedDrainageId.value}`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    );
+    const response = await productionService.updateDrainage(selectedDrainageId.value, payload);
     if (response.status === 200) {
       toast.success('Drainage updated successfully!');
       fetchDrainages();

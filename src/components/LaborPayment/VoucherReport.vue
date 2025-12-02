@@ -98,8 +98,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
-import config from '@/config';
+import { labourService, firmDetailsService } from '@/services';
 import { useToast } from 'vue-toastification'
 
 const toast = useToast();
@@ -199,14 +198,7 @@ const formatDate = (date) => {
 // fetch firm details
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    )
+    const response = await firmDetailsService.getFirmDetails();
 
     if (response.status === 200 && response.data) {
       firm.value = {
@@ -235,19 +227,8 @@ const fetchFirmDetails = async () => {
 // Fetch vouchers
 const fetchVoucher = async () => {
   try {
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      toast.error('Session expired. Please log in again.');
-      // this.router.push('/login'); // router is not defined here, handled by auth guard usually
-      return;
-    }
-
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/labour-payment-vouchers/get_vouchers`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    
+    const response = await labourService.getVouchers();
 
     if (response.status === 200) {
       vouchers.value = response.data.map((v) => ({
@@ -289,13 +270,7 @@ const downloadReport = async () => {
     if (toDateFilter.value) params.append('to_date', toDateFilter.value);
     params.append('download', 'true');
 
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/labour-payment-vouchers/download_labour_payment_vouchers?${params.toString()}`,
-      {
-        responseType: 'blob',
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const response = await labourService.downloadVoucherReport(params);
 
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');

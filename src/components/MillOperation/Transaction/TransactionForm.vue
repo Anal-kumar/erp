@@ -377,7 +377,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import millService from '@/services/millService'
+import { millService } from '@/services'
 import { useToast } from 'vue-toastification'
 import PackagingModal from './Modal/PackagingModal.vue'
 import StockItmeModal from './Modal/StockItemModal.vue'

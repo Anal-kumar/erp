@@ -44,7 +44,7 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue';
-import millService from '@/services/millService';
+import { millService } from '@/services';
 
 const stockDetails = ref([]);
 const searchTerm = ref('');

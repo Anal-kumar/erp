@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import storage from '@/utils/storage'
 
 // Layouts
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
@@ -464,11 +465,11 @@ const router = createRouter({
 
 // Navigation guard for authentication
 router.beforeEach((to, from, next) => {
-  const token = sessionStorage.getItem('token')
+  const isAuthenticated = storage.isAuthenticated()
 
   // Check if route requires authentication
   if (to.meta.requiresAuth) {
-    if (!token) {
+    if (!isAuthenticated) {
       // No token, redirect to login
       next('/login')
     } else {
@@ -477,7 +478,7 @@ router.beforeEach((to, from, next) => {
     }
   } else {
     // Route doesn't require auth
-    if (to.path === '/login' && token) {
+    if (to.path === '/login' && isAuthenticated) {
       // User is already logged in, redirect to home
       next('/home')
     } else {

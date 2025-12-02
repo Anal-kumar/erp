@@ -121,9 +121,9 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import axios from 'axios'
 import { useToast } from 'vue-toastification'
-import config from '@/config'
+import { labourService, getModuleStatus } from '@/services'
+import storage from '@/utils/storage'
 
 const toast = useToast()
 const showVoucherModal = ref(false)
@@ -193,12 +193,7 @@ watch(
 // Fetch dropdown options
 const fetchGangs = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/labour-gang/get_labour_gang`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    )
+    const response = await labourService.getLabourGangs()
     gangs.value = response.data
   } catch (error) {
     console.error('Error fetching gangs:', error)
@@ -208,12 +203,7 @@ const fetchGangs = async () => {
 
 const fetchWorkItems = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/work-items/get_labour_work_item`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    )
+    const response = await labourService.getLabourWorkItems()
     workItems.value = response.data
   } catch (error) {
     console.error('Error fetching work items:', error)
@@ -223,12 +213,7 @@ const fetchWorkItems = async () => {
 
 const fetchParticulars = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/work-particular/get_labour_work_particulars_details`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    )
+    const response = await labourService.getLabourWorkParticulars()
     particulars.value = response.data
   } catch (error) {
     console.error('Error fetching particulars:', error)
@@ -238,14 +223,7 @@ const fetchParticulars = async () => {
 
 const fetchPackagings = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/bag-packaging/get_labour_bag_packaging_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await labourService.getLabourBagPackagings()
     if (response.status === 200) {
       packagings.value = response.data
     }
@@ -257,12 +235,7 @@ const fetchPackagings = async () => {
 
 const fetchLocations = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/work-location/get_labour_work_location_details`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      },
-    )
+    const response = await labourService.getLabourWorkLocations()
     locations.value = response.data
   } catch (error) {
     console.error('Error fetching locations:', error)
@@ -351,14 +324,7 @@ const validateVoucherForm = () => {
 // Fetch module status
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await getModuleStatus()
     const modules = response.data
     const labourPaymentModule = modules.find((m) => m.module_name === 'labour_payment')
     if (!labourPaymentModule) {
@@ -426,17 +392,7 @@ const handleSubmit = async () => {
       })),
     };
 
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/${config.version}/labour-payment-vouchers/create_voucher`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
+    const response = await labourService.createVoucher(payload)
     if (response.status === 200 || response.status === 201) {
       toast.success('Voucher form submitted successfully!');
       voucher.value = { voucher_date: '', remarks: '', user_login_id: voucher.value.user_login_id, };
