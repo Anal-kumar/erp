@@ -60,6 +60,11 @@
           <template v-slot:item.verifier_clerk_name="{ item }">
             {{ item.verifier_clerk_name || '-' }}
           </template>
+          <template #no-data>
+            <div class="text-center py-4 text-grey">
+              No records found.
+            </div>
+          </template>
         </v-data-table>
 
         <!-- Download Button -->
@@ -75,8 +80,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import axios from 'axios';
-import config from '@/config';
+import { productionService } from '@/services';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
@@ -172,12 +176,7 @@ const formatTime = (timestamp) => {
 
 const fetchRecords = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/lots/get_all_lots`,
-      {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-      }
-    );
+    const response = await productionService.getLotDetails();
     if (Array.isArray(response.data)) {
       records.value = response.data.map(record => ({
         ...record,
@@ -203,7 +202,6 @@ const fetchRecords = async () => {
     }
   } catch (error) {
     console.error('Fetch failed:', error);
-    toast.error(error.response?.data?.message || 'Error fetching lot records');
   }
 };
 
@@ -216,7 +214,6 @@ const clearFilters = () => {
 };
 
 const downloadReport = async () => {
-  const token = sessionStorage.getItem('token');
   const params = new URLSearchParams();
   if (filters.lot_number) params.append('lot_number', filters.lot_number);
   if (filters.checker_clerk_name) params.append('checker_clerk_name', filters.checker_clerk_name);
@@ -226,14 +223,7 @@ const downloadReport = async () => {
   params.append('download', 'true');
 
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/lots/generate_lot_report`,
-      {
-        responseType: 'blob',
-        headers: { Authorization: `Bearer ${token}` },
-        params: params, // Use params object for axios to handle query string
-      }
-    );
+    const response = await productionService.downloadLotReport(params);
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;

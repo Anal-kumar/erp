@@ -45,7 +45,7 @@ const authService = {
 
             if (token) {
                 // Call backend refresh token endpoint
-                const response = await apiClient.post(`/login/refresh-token`, {}, {
+                const response = await apiClient.post(`/login/refresh_token`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -58,6 +58,16 @@ const authService = {
             }
         } catch (error) {
             logger.error('Refresh token error', error);
+            throw error;
+        }
+    },
+
+    async getDbStatus() {
+        try {
+            const response = await apiClient.get(`/db/status`);
+            return response.data;
+        } catch (error) {
+            logger.error('Database not found or corrupted database.', error);
             throw error;
         }
     },

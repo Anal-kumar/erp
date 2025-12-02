@@ -267,7 +267,7 @@ const addEvent = async () => {
 
 const editEvent = (item) => {
   if (item.type === 'reminder') {
-    toast.info('Cannot edit reminders from here. Please go to Expiry Reminder module.')
+    toast.info('Cannot edit reminders from here. Please go to Expiry Reminder.')
     return
   }
   isEditMode.value = true

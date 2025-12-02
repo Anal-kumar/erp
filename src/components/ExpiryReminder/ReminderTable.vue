@@ -226,10 +226,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
-import axios from 'axios'
-import config from '@/config.js'
-import expiryReminderService from '@/services/expiryReminderService'
+import { ref, reactive, onMounted } from 'vue'
+import storage from '@/utils/storage'
+import { expiryReminderService, firmDetailsService } from '@/services'
 import DocModal from './DocModal.vue'
 import { useToast } from 'vue-toastification'
 
@@ -241,7 +240,7 @@ const firm = ref({})
 const showModal = ref(false)
 const showEditModal = ref(false)
 const showRenewModal = ref(false)
-const user = ref(JSON.parse(sessionStorage.getItem('user') || '{}'))
+const user = ref(storage.getUser() || {})
 const selectedDocument = ref(null)
 const showPassword = ref(false)
 
@@ -291,10 +290,7 @@ const historyHeaders = [
   { title: 'Remarks', key: 'remarks', align: 'start' },
 ]
 
-onMounted(() => {
-  fetchReminders()
-  fetchFirmDetails()
-})
+
 
 const isAdmin = () => {
   return user.value && (user.value.role === 'admin' || user.value.role === 'superadmin')
@@ -498,14 +494,7 @@ const deleteDocument = async (id) => {
 
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    )
+    const response = await firmDetailsService.getFirmDetails();
     if (response.status === 200 && response.data) {
       firm.value = {
         firm_name: response.data.firm_name || 'Unknown Firm',
@@ -576,6 +565,11 @@ const fetchRenewalHistory = async (reminderId) => {
     renewalHistory.value = []
   }
 }
+
+onMounted(() => {
+  fetchReminders()
+  fetchFirmDetails()
+})
 </script>
 
 <style scoped>

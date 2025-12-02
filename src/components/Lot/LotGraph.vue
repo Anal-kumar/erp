@@ -31,9 +31,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
-import axios from "axios";
-import config from "@/config";
+import { ref, onMounted } from "vue";
+import { productionService } from "@/services";
 import {
   Chart,
   Title,
@@ -76,13 +75,7 @@ const activeMetrics = ref(metrics.map(m => m.key));
 
 const fetchLots = async () => {
   try {
-    const res = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/lots/get_all_lots`, {
-      headers: {
-        Authorization: `Bearer ${sessionStorage.getItem("token")}`
-      }
-    }
-    );
+    const res = await productionService.getLotDetails();
     rawData.value = res.data;
     renderChart();
   } catch (err) {

@@ -103,9 +103,8 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
-import axios from 'axios';
-import config from '@/config.js';
-import expiryReminderService from '@/services/expiryReminderService';
+import storage from '@/utils/storage';
+import { expiryReminderService, getModuleStatus } from '@/services';
 import { useToast } from 'vue-toastification'
 
 // Reactive form data
@@ -140,9 +139,9 @@ const togglePassword = () => {
 // Set user from local storage on mount
 onMounted(() => {
   fetchModuleStatus()
-  const sessionUser = sessionStorage.getItem('user');
+  const sessionUser = storage.getUser();
   if (sessionUser) {
-    const user = JSON.parse(sessionUser);
+    const user = sessionUser;
     form.user_login_id = user.id;
     form.has_login = true;
   }
@@ -151,14 +150,7 @@ onMounted(() => {
 // Fetch module status
 const fetchModuleStatus = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/modules/get_modules`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-        },
-      },
-    )
+    const response = await getModuleStatus();
     // Debug API response
     const modules = response.data
     const ReminderModule = modules.find((m) => m.module_name === 'expiry_reminder')
@@ -220,8 +212,8 @@ const submitForm = async () => {
         agent_mob: '',
         remarks: ''
       });
-      issueInput.value = '',
-        expiryInput.value = '';
+      issueInput.value = '';
+      expiryInput.value = '';
       showPassword.value = false;
       if (formRef.value) formRef.value.resetValidation()
       toast.success('Reminder is added')

@@ -185,9 +185,8 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import axios from 'axios'
-import config from '@/config.js'
-import daybookService from '@/services/daybookService'
+import { daybookService, firmDetailsService } from '@/services'
+import storage from '@/utils/storage'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -199,7 +198,7 @@ const OpenEditModal = ref(false)
 const partyNameFilter = ref('')
 const start_dateFilter = ref('')
 const end_dateFilter = ref('')
-const user = ref(JSON.parse(sessionStorage.getItem('user')))
+const user = ref(storage.getUser() || {})
 const isUpdating = ref(false)
 const editEntryId = ref(null)
 
@@ -270,14 +269,7 @@ const filteredExpenseEntries = computed(() => {
 
 const fetchFirmDetails = async () => {
   try {
-    const response = await axios.get(
-      `${config.apiBaseUrl}/api/${config.version}/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem('token')}`
-        }
-      }
-    );
+    const response = await firmDetailsService.getFirmDetails();
     if (response.status === 200 && response.data) {
       firm.value = {
         firm_name: response.data.firm_name || 'Unknown Firm',

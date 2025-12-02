@@ -1,4 +1,3 @@
-export { default as apiClient } from "./api";
 export { default as adminService } from "./adminService";
 export { default as authService } from "./authService";
 export { default as backupService } from "./backupService";

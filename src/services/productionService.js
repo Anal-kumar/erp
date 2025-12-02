@@ -111,10 +111,22 @@ export default {
     },
 
     // --- Lot Details ---
+    getLotDetailsById(id) {
+        return apiClient.get(`/lots/get_lot/${id}`)
+    },
     getLotDetails() {
         return apiClient.get('/lots/get_all_lots')
     },
     createLotDetails(payload) {
         return apiClient.post('/lots/create_lot', payload)
     },
+    updateLotDetails(id, payload) {
+      return apiClient.put(`/lots/update_lot/${id}`, payload)
+    },
+    downloadLotReport(params) {
+      return apiClient.get('/lots/generate_lot_report', {
+        responseType: 'blob',
+        params: params,
+      });
+    }
 }

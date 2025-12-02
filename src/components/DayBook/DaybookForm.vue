@@ -123,8 +123,9 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import daybookService from '@/services/daybookService'
+import { daybookService, getModuleStatus } from '@/services'
 import { useToast } from 'vue-toastification'
+import storage from '@/utils/storage'
 
 // Reactive form object
 const form = reactive({
@@ -168,9 +169,9 @@ const headers = [
 
 // Load user ID from sessionStorage on mount
 onMounted(() => {
-  const sessionUser = sessionStorage.getItem('user')
+  const sessionUser = storage.getUser()
   if (sessionUser) {
-    const user = JSON.parse(sessionUser)
+    const user = sessionUser
     form.user_login_id = user.id
   }
   fetchModuleStatus()
@@ -180,7 +181,7 @@ onMounted(() => {
 // Fetch module status
 const fetchModuleStatus = async () => {
   try {
-    const response = await daybookService.getModuleStatus()
+    const response = await getModuleStatus()
 
     const modules = response.data
     const DayBookModule = modules.find((m) => m.module_name === 'day_book')

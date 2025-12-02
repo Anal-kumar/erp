@@ -42,7 +42,7 @@
       <span class="text-caption text-error">Session Expiring</span>
     </div>
 
-    <v-btn icon="mdi-logout" @click="logout" title="Logout" class="mr-2"></v-btn>
+    <v-btn icon="mdi-logout" @click="logout" title="Logout" class="d-none d-md-flex mr-2"></v-btn>
 
     <!-- Mobile Menu -->
     <template v-slot:append>
@@ -50,24 +50,57 @@
         <template v-slot:activator="{ props }">
           <v-btn icon="mdi-menu" v-bind="props" class="d-md-none"></v-btn>
         </template>
-        <v-list>
-          <v-list-item>
-            <v-list-item-title>{{ dateTime }}</v-list-item-title>
+        <v-list density="compact" nav>
+          <!-- User Info -->
+          <v-list-item class="mb-2">
+            <template v-slot:prepend>
+              <v-avatar color="primary" size="40">
+                <span class="text-h6 text-white">{{ currentUsername.charAt(0).toUpperCase() }}</span>
+              </v-avatar>
+            </template>
+            <v-list-item-title class="font-weight-bold">{{ currentUsername }}</v-list-item-title>
+            <v-list-item-subtitle>ID: {{ currentUser }}</v-list-item-subtitle>
           </v-list-item>
+
+          <v-divider class="mb-2"></v-divider>
+
+          <!-- Date & Time -->
           <v-list-item>
-            <v-list-item-title>User: {{ currentUser }}</v-list-item-title>
-            <v-list-item-subtitle>{{ currentUsername }}</v-list-item-subtitle>
+            <template v-slot:prepend>
+              <v-icon icon="mdi-clock-outline" color="primary"></v-icon>
+            </template>
+            <v-list-item-title class="text-caption">{{ dateTime }}</v-list-item-title>
           </v-list-item>
+
+          <!-- Role -->
           <v-list-item>
-            <v-list-item-title :class="{
-              'text-error': userRole === 'admin' || userRole === 'superadmin',
-              'text-success': userRole !== 'admin' && userRole !== 'superadmin'
-            }">
-              Role: {{ userRole === 'admin' ? 'Admin' : userRole === 'superadmin' ? 'Superadmin' : 'User' }}
+            <template v-slot:prepend>
+              <v-icon :icon="userRole === 'admin' || userRole === 'superadmin' ? 'mdi-shield-account' : 'mdi-account'"
+                :color="userRole === 'admin' || userRole === 'superadmin' ? 'error' : 'success'"></v-icon>
+            </template>
+            <v-list-item-title>
+              <span :class="userRole === 'admin' || userRole === 'superadmin' ? 'text-error' : 'text-success'">
+                {{ userRole === 'admin' ? 'Admin' : userRole === 'superadmin' ? 'Superadmin' : 'User' }}
+              </span>
             </v-list-item-title>
           </v-list-item>
+
+          <!-- Session Info -->
           <v-list-item>
-            <v-list-item-title>Session: {{ tokenExpiryTime }}</v-list-item-title>
+            <template v-slot:prepend>
+              <v-icon icon="mdi-timer-outline" color="warning"></v-icon>
+            </template>
+            <v-list-item-title>Expires in: {{ tokenExpiryTime }}</v-list-item-title>
+          </v-list-item>
+
+          <v-divider class="my-2"></v-divider>
+
+          <!-- Logout -->
+          <v-list-item @click="logout" base-color="error" variant="tonal">
+            <template v-slot:prepend>
+              <v-icon icon="mdi-logout"></v-icon>
+            </template>
+            <v-list-item-title>Logout</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -79,7 +112,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import config from '@/config'
-import { apiClient } from '@/services'
+import { authService, firmDetailsService } from '@/services'
 import storage from '@/utils/storage'
 const router = useRouter()
 
@@ -104,15 +137,7 @@ function logout() {
 
 async function refreshToken() {
   try {
-    const response = await apiClient.post(
-      `/login/refresh_token`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${storage.getToken()}`,
-        },
-      },
-    )
+    const response = await authService.refreshToken()
     if (response.status === 200 && response.data.access_token) {
       storage.setToken(response.data.access_token)
       updateTime()
@@ -191,17 +216,9 @@ function updateTime() {
   }
 }
 
-
 async function getDatabaseStatus() {
   try {
-    const response = await apiClient.get(
-      `/backups/current-database`,
-      {
-        headers: {
-          Authorization: `Bearer ${storage.getToken()}`,
-        },
-      },
-    )
+    const response = await authService.getDbStatus()
     if (response.status === 200) {
       const fullPath = response.data.current_database || 'Unknown'
       const parts = fullPath.split(/[/\\]/)
@@ -217,14 +234,7 @@ async function getDatabaseStatus() {
 
 async function fetchFirmDetails() {
   try {
-    const response = await apiClient.get(
-      `/firm_details/get_firm_details`,
-      {
-        headers: {
-          Authorization: `Bearer ${storage.getToken()}`,
-        },
-      },
-    )
+    const response = await firmDetailsService.getFirmDetails()
     if (response.status === 200) {
       firm.value = response.data
     }

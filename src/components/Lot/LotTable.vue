@@ -37,6 +37,11 @@
               mdi-pencil
             </v-icon>
           </template>
+          <template #no-data>
+            <div class="text-center py-4 text-grey">
+              No records found.
+            </div>
+          </template>
         </v-data-table>
       </v-card-text>
     </v-card>
@@ -129,7 +134,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { useToast } from 'vue-toastification';
-import { apiClient, firmDetailsService, productionService } from '@/services'
+import { productionService } from '@/services'
 import storage from '@/utils/storage';
 
 const toast = useToast();
@@ -185,7 +190,7 @@ const headers = [
 const fetchRecords = async () => {
   loading.value = true;
   try {
-    const response = await productionService.getLots()
+    const response = await productionService.getLotDetails()
 
     if (Array.isArray(response.data)) {
       records.value = response.data;
@@ -332,13 +337,7 @@ const updateRecord = async () => {
       return;
     }
 
-    const response = await apiClient.put(
-      `/lots/update_lot/${editForm.id}`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${storage.getToken()}` },
-      },
-    );
+    const response = await productionService.updateLotDetails(editForm.id, payload);
 
     if (response.status === 200) {
       await fetchRecords();
@@ -357,8 +356,6 @@ const updateRecord = async () => {
 
 onMounted(() => {
   fetchRecords();
-  productionService.getClerks();
-  firmDetailsService.getFirmDetails();
 });
 </script>
 

@@ -78,7 +78,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import daybookService from '@/services/daybookService'
+import { daybookService } from '@/services'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()

@@ -44,7 +44,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { authService, apiClient } from '@/services'
+import { authService } from '@/services'
 import InitDbModal from '@/views/InitDbModal.vue'
 
 const router = useRouter()
@@ -79,7 +79,7 @@ const togglePassword = () => {
 
 const handleInitDbClick = async () => {
   try {
-    const res = await apiClient.get('/db/status')
+    const res = await authService.getDbStatus()
     if (!res.data.db_initialized) {
       showInitDbModal.value = true
     } else {
@@ -95,8 +95,8 @@ const login = async () => {
   isLoading.value = true
   try {
     // Check DB status first
-    const dbRes = await apiClient.get('/db/status')
-    if (!dbRes.data.db_initialized) {
+    const dbRes = await authService.getDbStatus()
+    if (!dbRes.db_initialized) {
       toast.error('Database is not initialized. Please initialize first.')
       return
     }
